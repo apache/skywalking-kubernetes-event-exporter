@@ -22,11 +22,12 @@ package main
 import (
 	"io/ioutil"
 
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
+
 	"github.com/apache/skywalking-kubernetes-event-exporter/assets"
 	"github.com/apache/skywalking-kubernetes-event-exporter/configs"
 	"github.com/apache/skywalking-kubernetes-event-exporter/internal/pkg/logger"
-	"github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
 )
 
 var (

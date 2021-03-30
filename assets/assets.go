@@ -19,7 +19,11 @@
 
 package assets
 
-import _ "embed"
+import (
+	//nolint // no other possibility
+	_ "embed"
+)
 
+// DefaultConfig is the default configurations of the exporter.
 //go:embed default-config.yaml
 var DefaultConfig []byte

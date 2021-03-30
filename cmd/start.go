@@ -24,10 +24,11 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/apache/skywalking-kubernetes-event-exporter/pkg/k8s"
-	"github.com/apache/skywalking-kubernetes-event-exporter/pkg/pipe"
 	"github.com/spf13/cobra"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+
+	"github.com/apache/skywalking-kubernetes-event-exporter/pkg/k8s"
+	"github.com/apache/skywalking-kubernetes-event-exporter/pkg/pipe"
 )
 
 func init() {

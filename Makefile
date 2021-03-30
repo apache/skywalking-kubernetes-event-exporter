@@ -16,6 +16,9 @@
 # under the License.
 #
 
+export PATH := $(PATH):$(HOME)/usr/local/bin
+export GO111MODULE := on
+
 APP = skywalking-kubernetes-event-exporter
 VERSION ?= latest
 OUT_DIR = bin
@@ -36,30 +39,31 @@ ARCH = amd64
 RELEASE_BIN = $(APP)-$(VERSION)-bin
 RELEASE_SRC = $(APP)-$(VERSION)-src
 
-all: clean lint license test build
-
-.PHONY: codegen
-codegen:
-	protoc -I=api --go_out=api --go-grpc_out=api api/event/Event.proto api/common/*.proto
-	cd api/skywalking/network && (rm go.mod || true) && go mod init skywalking/network && go mod tidy
+all: clean lint test build
 
 .PHONY: lint
 lint:
 	$(GO_LINT) version || curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GO_PATH)/bin
-	$(GO_LINT) run -v ./...
+	$(GO_LINT) run -v --timeout 5m ./...
 
 .PHONY: fix-lint
 fix-lint:
 	$(GO_LINT) run -v --fix ./...
 
-.PHONY: license
-license: clean
-	echo "TODO"
+.PHONY: check
+check: clean
+	$(GO) mod tidy > /dev/null
+	@if [ ! -z "`git status -s`" ]; then \
+		echo "Following files are not consistent with CI:"; \
+		git status -s; \
+		git diff; \
+		exit 1; \
+	fi
 
 .PHONY: test
 test: clean
 	$(GO_TEST) ./... -coverprofile=coverage.txt -covermode=atomic
-	@>&2 echo "Great, all tests passed."
+	@>&2 echo "Great, all tests passed!!"
 
 .PHONY: $(PLATFORMS)
 $(PLATFORMS):
@@ -75,6 +79,7 @@ docker:
 
 .PHONY: clean
 clean:
+	-rm -rf api/skywalking
 	-rm -rf bin
 	-rm -rf coverage.txt
 	-rm -rf "$(RELEASE_BIN)"*
@@ -91,7 +96,6 @@ release-src: clean
 	--exclude .DS_Store \
 	--exclude .github \
 	--exclude $(RELEASE_SRC).tgz \
-	--exclude query-protocol/schema.graphqls \
 	.
 
 release-bin: build

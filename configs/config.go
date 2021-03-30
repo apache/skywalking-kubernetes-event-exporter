@@ -20,9 +20,10 @@
 package configs
 
 import (
-	evnt "github.com/apache/skywalking-kubernetes-event-exporter/pkg/event"
 	"gopkg.in/yaml.v3"
 	v1 "k8s.io/api/core/v1"
+
+	evnt "github.com/apache/skywalking-kubernetes-event-exporter/pkg/event"
 )
 
 type FilterConfig struct {
