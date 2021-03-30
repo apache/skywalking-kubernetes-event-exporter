@@ -38,6 +38,11 @@ RELEASE_SRC = $(APP)-$(VERSION)-src
 
 all: clean lint license test build
 
+.PHONY: codegen
+codegen:
+	protoc -I=api --go_out=api --go-grpc_out=api api/event/Event.proto api/common/*.proto
+	cd api/skywalking/network && (rm go.mod || true) && go mod init skywalking/network && go mod tidy
+
 .PHONY: lint
 lint:
 	$(GO_LINT) version || curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GO_PATH)/bin
@@ -71,7 +76,6 @@ docker:
 .PHONY: clean
 clean:
 	-rm -rf bin
-	-rm -rf assets/*.gen.go
 	-rm -rf coverage.txt
 	-rm -rf "$(RELEASE_BIN)"*
 	-rm -rf "$(RELEASE_SRC)"*

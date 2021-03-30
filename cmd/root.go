@@ -20,6 +20,10 @@
 package main
 
 import (
+	"io/ioutil"
+
+	"github.com/apache/skywalking-kubernetes-event-exporter/assets"
+	"github.com/apache/skywalking-kubernetes-event-exporter/configs"
 	"github.com/apache/skywalking-kubernetes-event-exporter/internal/pkg/logger"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -42,11 +46,23 @@ var rootCmd = &cobra.Command{
 		}
 		logger.Log.SetLevel(level)
 
+		content := assets.DefaultConfig
+		if configFile != "" {
+			c, err := ioutil.ReadFile(configFile)
+			if err != nil {
+				return err
+			}
+			content = c
+		}
+		if err := configs.ParseConfig(content); err != nil {
+			return err
+		}
+
 		return nil
 	},
 }
 
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&verbosity, "verbosity", "v", logrus.InfoLevel.String(), "log level (debug, info, warn, error, fatal, panic")
-	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "config.yaml", "the config file")
+	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "", "the config file")
 }
