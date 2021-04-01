@@ -24,7 +24,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"time"
 
 	sw "skywalking.apache.org/repo/goapi/collect/event/v3"
@@ -45,8 +44,8 @@ type SkyWalking struct {
 }
 
 type SkyWalkingConfig struct {
-	Address  string           `mapstructure:"address"`
-	Template *MessageTemplate `mapstructure:"template"`
+	Address  string         `mapstructure:"address"`
+	Template *EventTemplate `mapstructure:"template"`
 }
 
 func init() {
@@ -64,6 +63,10 @@ func (exporter *SkyWalking) Init() error {
 	} else if marshal, err := json.Marshal(c); err != nil {
 		return err
 	} else if err := json.Unmarshal(marshal, &config); err != nil {
+		return err
+	}
+
+	if err := config.Template.Init(); err != nil {
 		return err
 	}
 
@@ -85,16 +88,13 @@ func (exporter *SkyWalking) Name() string {
 
 // TODO error handling
 func (exporter *SkyWalking) Export(events chan *k8score.Event) {
+	logger.Log.Debugf("exporting events into %+v", exporter.Name())
+
 	stream, err := exporter.client.Collect(context.Background())
 	for err != nil {
 		select {
 		case <-exporter.stopper:
-			logger.Log.Debugf("draining event channel")
-			for e := range events {
-				if e == event.Stopper {
-					break
-				}
-			}
+			drain(events)
 			return
 		default:
 			logger.Log.Errorf("failed to connect to SkyWalking server. %+v", err)
@@ -113,12 +113,7 @@ func (exporter *SkyWalking) Export(events chan *k8score.Event) {
 		for {
 			select {
 			case <-exporter.stopper:
-				logger.Log.Debugf("draining event channel")
-				for e := range events {
-					if e == event.Stopper {
-						break
-					}
-				}
+				drain(events)
 				return
 			case kEvent := <-events:
 				if kEvent == event.Stopper {
@@ -152,16 +147,12 @@ func (exporter *SkyWalking) Export(events chan *k8score.Event) {
 	}()
 }
 
-func (tmplt *MessageTemplate) Render(event *sw.Event, data *k8score.Event) error {
+func (tmplt *EventTemplate) Render(event *sw.Event, data *k8score.Event) error {
 	var buf bytes.Buffer
 
 	// Render Event Message
-	if tmplt.Message != "" {
+	if t := tmplt.messageTemplate; t != nil {
 		buf.Reset()
-		t, err := template.New("EventMsg").Parse(tmplt.Message)
-		if err != nil {
-			return err
-		}
 		if err := t.Execute(&buf, data); err != nil {
 			return err
 		}
@@ -171,14 +162,10 @@ func (tmplt *MessageTemplate) Render(event *sw.Event, data *k8score.Event) error
 	}
 
 	// Render Event Source
-	if tmplt.Source != nil {
+	if tmplt.sourceTemplate != nil {
 		// Render Event Source Service
-		if tmplt.Source.Service != "" {
+		if t := tmplt.sourceTemplate.serviceTemplate; t != nil {
 			buf.Reset()
-			t, err := template.New("EventSourceService").Parse(tmplt.Source.Service)
-			if err != nil {
-				return err
-			}
 			if err := t.Execute(&buf, data); err != nil {
 				return err
 			}
@@ -187,12 +174,8 @@ func (tmplt *MessageTemplate) Render(event *sw.Event, data *k8score.Event) error
 			}
 		}
 		// Render Event Source Service
-		if tmplt.Source.ServiceInstance != "" {
+		if t := tmplt.sourceTemplate.serviceInstanceTemplate; t != nil {
 			buf.Reset()
-			t, err := template.New("EventSourceServiceInstance").Parse(tmplt.Source.ServiceInstance)
-			if err != nil {
-				return err
-			}
 			if err := t.Execute(&buf, data); err != nil {
 				return err
 			}
@@ -201,12 +184,8 @@ func (tmplt *MessageTemplate) Render(event *sw.Event, data *k8score.Event) error
 			}
 		}
 		// Render Event Source Endpoint
-		if tmplt.Source.Endpoint != "" {
+		if t := tmplt.sourceTemplate.endpointTemplate; t != nil {
 			buf.Reset()
-			t, err := template.New("EventSourceEndpoint").Parse(tmplt.Source.Endpoint)
-			if err != nil {
-				return err
-			}
 			if err := t.Execute(&buf, data); err != nil {
 				return err
 			}

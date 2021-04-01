@@ -17,8 +17,9 @@
 #
 
 filters:
-  - namespace: default
-    exporter: skywalking
+  - namespace: istio-system
+    exporters:
+      - skywalking
 
 exporters:
   skywalking:
