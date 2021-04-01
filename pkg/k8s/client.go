@@ -29,11 +29,11 @@ import (
 )
 
 func GetClient() (*kubernetes.Clientset, error) {
-	if config, err := GetConfig(); err != nil {
+	config, err := GetConfig()
+	if err != nil {
 		return nil, err
-	} else {
-		return kubernetes.NewForConfig(config)
 	}
+	return kubernetes.NewForConfig(config)
 }
 
 // GetConfig returns the configuration to connect to the Kubernetes API server.

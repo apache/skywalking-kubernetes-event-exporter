@@ -1,7 +1,8 @@
-.*
 .idea
 coverage.txt
 bin
+
+.DS_Store
 
 # Binaries for programs and plugins
 *.exe

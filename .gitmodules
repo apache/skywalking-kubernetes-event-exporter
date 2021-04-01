@@ -1,3 +1,0 @@
-[submodule "api"]
-	path = api
-	url = http://github.com/apache/skywalking-data-collect-protocol/

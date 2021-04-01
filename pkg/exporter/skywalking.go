@@ -25,14 +25,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
-	sw "skywalking/network/event/v3"
 	"time"
+
+	sw "skywalking.apache.org/repo/goapi/collect/event/v3"
+
+	"google.golang.org/grpc"
+	k8score "k8s.io/api/core/v1"
 
 	"github.com/apache/skywalking-kubernetes-event-exporter/configs"
 	"github.com/apache/skywalking-kubernetes-event-exporter/internal/pkg/logger"
 	"github.com/apache/skywalking-kubernetes-event-exporter/pkg/event"
-	"google.golang.org/grpc"
-	k8score "k8s.io/api/core/v1"
 )
 
 type SkyWalking struct {

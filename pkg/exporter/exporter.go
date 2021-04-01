@@ -20,9 +20,10 @@
 package exporter
 
 import (
+	v1 "k8s.io/api/core/v1"
+
 	"github.com/apache/skywalking-kubernetes-event-exporter/internal/pkg/logger"
 	"github.com/apache/skywalking-kubernetes-event-exporter/pkg/event"
-	v1 "k8s.io/api/core/v1"
 )
 
 type Exporter interface {

@@ -22,12 +22,13 @@ package pipe
 import (
 	"fmt"
 
+	v1 "k8s.io/api/core/v1"
+
 	"github.com/apache/skywalking-kubernetes-event-exporter/configs"
 	"github.com/apache/skywalking-kubernetes-event-exporter/internal/pkg/logger"
 	"github.com/apache/skywalking-kubernetes-event-exporter/pkg/event"
 	exp "github.com/apache/skywalking-kubernetes-event-exporter/pkg/exporter"
 	"github.com/apache/skywalking-kubernetes-event-exporter/pkg/k8s"
-	v1 "k8s.io/api/core/v1"
 )
 
 type workflow struct {
