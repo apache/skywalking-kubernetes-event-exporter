@@ -44,34 +44,43 @@ type Pipe struct {
 }
 
 func (p *Pipe) Init() error {
+	logger.Log.Debugf("initializing pipe")
+
 	p.stopper = make(chan struct{})
 	p.workflows = []workflow{}
 
 	initialized := map[string]bool{}
 	for _, filter := range configs.GlobalConfig.Filters {
-		if _, ok := configs.GlobalConfig.Exporters[filter.Exporter]; !ok {
-			return fmt.Errorf("exporter %v is not defined", filter.Exporter)
-		}
-		exporter := exp.GetExporter(filter.Exporter)
-		if exporter == nil {
-			return fmt.Errorf("exporter %v is not defined", filter.Exporter)
-		}
-		if initialized[filter.Exporter] {
-			continue
-		}
-		if err := exporter.Init(); err != nil {
-			return err
-		}
-		initialized[filter.Exporter] = true
+		filter.Init()
 
-		events := make(chan *v1.Event)
+		for _, name := range filter.Exporters {
+			if _, ok := configs.GlobalConfig.Exporters[name]; !ok {
+				return fmt.Errorf("exporter %v is not defined", filter.Exporters)
+			}
+			exporter := exp.GetExporter(name)
+			if exporter == nil {
+				return fmt.Errorf("exporter %v is not defined", filter.Exporters)
+			}
+			if initialized[name] {
+				logger.Log.Debugf("exporter %+v has been initialized, skip", name)
+				continue
+			}
+			if err := exporter.Init(); err != nil {
+				return err
+			}
+			initialized[name] = true
 
-		p.workflows = append(p.workflows, workflow{
-			filter:   filter,
-			exporter: exporter,
-			events:   events,
-		})
+			events := make(chan *v1.Event)
+
+			p.workflows = append(p.workflows, workflow{
+				filter:   filter,
+				exporter: exporter,
+				events:   events,
+			})
+		}
 	}
+
+	logger.Log.Debugf("pipe has been initialized")
 
 	return nil
 }

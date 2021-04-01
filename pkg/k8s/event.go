@@ -20,6 +20,7 @@
 package k8s
 
 import (
+	"github.com/apache/skywalking-kubernetes-event-exporter/internal/pkg/logger"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
@@ -44,10 +45,14 @@ func (w EventWatcher) OnDelete(_ interface{}) {
 }
 
 func (w EventWatcher) Start() {
+	logger.Log.Debugf("starting event watcher")
+
 	go w.informer.Run(w.stopCh)
 }
 
 func (w EventWatcher) Stop() {
+	logger.Log.Debugf("stopping event watcher")
+
 	w.stopCh <- struct{}{}
 	close(w.stopCh)
 }

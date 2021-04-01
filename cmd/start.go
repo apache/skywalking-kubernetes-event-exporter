@@ -25,6 +25,7 @@ import (
 	"syscall"
 
 	"github.com/spf13/cobra"
+	v1 "k8s.io/api/core/v1"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	"github.com/apache/skywalking-kubernetes-event-exporter/pkg/k8s"
@@ -39,7 +40,7 @@ var startCmd = &cobra.Command{
 	Use:   "start",
 	Short: "Start skywalking-kubernetes-event-exporter",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		watcher, err := k8s.WatchEvents("default")
+		watcher, err := k8s.WatchEvents(v1.NamespaceAll)
 		if err != nil {
 			return err
 		}

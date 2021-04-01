@@ -20,6 +20,9 @@
 package configs
 
 import (
+	"regexp"
+
+	"github.com/apache/skywalking-kubernetes-event-exporter/internal/pkg/logger"
 	"gopkg.in/yaml.v3"
 	v1 "k8s.io/api/core/v1"
 
@@ -27,22 +30,63 @@ import (
 )
 
 type FilterConfig struct {
-	Reason   string `yaml:"reason"`
-	Message  string `yaml:"message"`
-	MinCount int32  `yaml:"min-count"`
-	Type     string `yaml:"type"`
-	Action   string `yaml:"action"`
+	Reason          string `yaml:"reason"`
+	reasonRegExp    *regexp.Regexp
+	Message         string `yaml:"message"`
+	messageRegExp   *regexp.Regexp
+	MinCount        int32  `yaml:"min-count"`
+	Type            string `yaml:"type"`
+	typeRegExp      *regexp.Regexp
+	Action          string `yaml:"action"`
+	actionRegExp    *regexp.Regexp
+	Kind            string `yaml:"kind"`
+	kindRegExp      *regexp.Regexp
+	Namespace       string `yaml:"namespace"`
+	namespaceRegExp *regexp.Regexp
+	Name            string `yaml:"name"`
+	nameRegExp      *regexp.Regexp
 
-	Kind      string `yaml:"kind"`
-	Namespace string `yaml:"namespace"`
-	Name      string `yaml:"name"`
-
-	Exporter string `yaml:"exporter"`
+	Exporters []string `yaml:"exporters"`
 }
 
+func (filter *FilterConfig) Init() {
+	logger.Log.Debugf("initalizing filter config")
+
+	filter.reasonRegExp = regexp.MustCompile(filter.Reason)
+	filter.messageRegExp = regexp.MustCompile(filter.Message)
+	filter.typeRegExp = regexp.MustCompile(filter.Type)
+	filter.actionRegExp = regexp.MustCompile(filter.Action)
+	filter.kindRegExp = regexp.MustCompile(filter.Kind)
+	filter.namespaceRegExp = regexp.MustCompile(filter.Namespace)
+	filter.nameRegExp = regexp.MustCompile(filter.Name)
+}
+
+// Filter the given event with this filter instance.
+// Return true if the event is filtered, return false otherwise.
 func (filter *FilterConfig) Filter(event *v1.Event) bool {
 	if event == evnt.Stopper {
 		return false
+	}
+	if filter.Reason != "" && !filter.reasonRegExp.MatchString(event.Reason) {
+		return true
+	}
+	if filter.Message != "" && !filter.messageRegExp.MatchString(event.Message) {
+		return true
+	}
+	if filter.Type != "" && !filter.typeRegExp.MatchString(event.Type) {
+		return true
+	}
+	if filter.Action != "" && !filter.actionRegExp.MatchString(event.Action) {
+		return true
+	}
+	if filter.Kind != "" && !filter.kindRegExp.MatchString(event.Kind) {
+		return true
+	}
+	if filter.Namespace != "" && !filter.namespaceRegExp.MatchString(event.Namespace) {
+		return true
+	}
+	if filter.Name != "" && !filter.nameRegExp.MatchString(event.Name) {
+		return true
 	}
 	return false
 }

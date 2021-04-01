@@ -20,6 +20,8 @@
 package exporter
 
 import (
+	"html/template"
+
 	v1 "k8s.io/api/core/v1"
 
 	"github.com/apache/skywalking-kubernetes-event-exporter/internal/pkg/logger"
@@ -31,11 +33,6 @@ type Exporter interface {
 	Init() error
 	Export(events chan *v1.Event)
 	Stop()
-}
-
-type MessageTemplate struct {
-	Source  *event.Source `mapstructure:"source"`
-	Message string        `mapstructure:"message"`
 }
 
 var exporters = map[string]Exporter{}
@@ -50,4 +47,45 @@ func RegisterExporter(name string, exporter Exporter) {
 
 func GetExporter(name string) Exporter {
 	return exporters[name]
+}
+
+type SourceTemplate struct {
+	serviceTemplate         *template.Template
+	serviceInstanceTemplate *template.Template
+	endpointTemplate        *template.Template
+}
+
+type EventTemplate struct {
+	Source          *event.Source `mapstructure:"source"`
+	sourceTemplate  *SourceTemplate
+	Message         string `mapstructure:"message"`
+	messageTemplate *template.Template
+}
+
+func (tmplt *EventTemplate) Init() (err error) {
+	if tmplt.Message != "" {
+		if tmplt.messageTemplate, err = template.New("EventMessageTemplate").Parse(tmplt.Message); err != nil {
+			return err
+		}
+	}
+
+	if tmplt.Source != nil {
+		if tmplt.Source.Service != "" {
+			if tmplt.sourceTemplate.serviceTemplate, err = template.New("EventSourceServiceTemplate").Parse(tmplt.Source.Service); err != nil {
+				return err
+			}
+		}
+		if tmplt.Source.ServiceInstance != "" {
+			if tmplt.sourceTemplate.serviceInstanceTemplate, err = template.New("EventServiceInstanceTemplate").Parse(tmplt.Source.ServiceInstance); err != nil {
+				return err
+			}
+		}
+		if tmplt.Source.Endpoint != "" {
+			if tmplt.sourceTemplate.endpointTemplate, err = template.New("EventEndpointTemplate").Parse(tmplt.Source.Endpoint); err != nil {
+				return err
+			}
+		}
+	}
+
+	return err
 }
