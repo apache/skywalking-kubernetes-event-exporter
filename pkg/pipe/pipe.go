@@ -80,6 +80,10 @@ func (p *Pipe) Init() error {
 		}
 	}
 
+	if err := k8s.Registry.Init(); err != nil {
+		return err
+	}
+
 	logger.Log.Debugf("pipe has been initialized")
 
 	return nil
@@ -87,6 +91,8 @@ func (p *Pipe) Init() error {
 
 func (p *Pipe) Start() error {
 	p.Watcher.Start()
+
+	k8s.Registry.Start()
 
 	for _, wkfl := range p.workflows {
 		go wkfl.exporter.Export(wkfl.events)
@@ -119,6 +125,8 @@ func (p *Pipe) Stop() {
 		logger.Log.Debugf("stopping exporter %+v.", w.exporter.Name())
 		w.exporter.Stop()
 	}
+
+	k8s.Registry.Stop()
 
 	p.stopper <- struct{}{}
 	close(p.stopper)

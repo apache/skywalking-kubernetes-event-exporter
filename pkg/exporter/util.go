@@ -20,9 +20,10 @@
 package exporter
 
 import (
+	k8score "k8s.io/api/core/v1"
+
 	"github.com/apache/skywalking-kubernetes-event-exporter/internal/pkg/logger"
 	"github.com/apache/skywalking-kubernetes-event-exporter/pkg/event"
-	k8score "k8s.io/api/core/v1"
 )
 
 func drain(events chan *k8score.Event) {

@@ -22,9 +22,9 @@ package event
 import v1 "k8s.io/api/core/v1"
 
 type Source struct {
-	Service         string `json:"service"`
-	ServiceInstance string `json:"serviceInstance"`
-	Endpoint        string `json:"endpoint"`
+	Service         string `mapstructure:"service"`
+	ServiceInstance string `mapstructure:"serviceInstance"`
+	Endpoint        string `mapstructure:"endpoint"`
 }
 
 var Stopper = (*v1.Event)(nil)
