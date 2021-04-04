@@ -22,9 +22,10 @@ package configs
 import (
 	"regexp"
 
-	"github.com/apache/skywalking-kubernetes-event-exporter/internal/pkg/logger"
 	"gopkg.in/yaml.v3"
 	v1 "k8s.io/api/core/v1"
+
+	"github.com/apache/skywalking-kubernetes-event-exporter/internal/pkg/logger"
 
 	evnt "github.com/apache/skywalking-kubernetes-event-exporter/pkg/event"
 )
@@ -50,7 +51,7 @@ type FilterConfig struct {
 }
 
 func (filter *FilterConfig) Init() {
-	logger.Log.Debugf("initalizing filter config")
+	logger.Log.Debugf("initializing filter config")
 
 	filter.reasonRegExp = regexp.MustCompile(filter.Reason)
 	filter.messageRegExp = regexp.MustCompile(filter.Message)

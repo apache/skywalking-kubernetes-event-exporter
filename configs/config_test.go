@@ -22,7 +22,7 @@ package configs
 import (
 	"testing"
 
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 func TestFilterConfig_Filter(t *testing.T) {

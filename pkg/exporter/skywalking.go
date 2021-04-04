@@ -24,9 +24,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"time"
 
 	sw "skywalking.apache.org/repo/goapi/collect/event/v3"
+
+	"github.com/apache/skywalking-kubernetes-event-exporter/pkg/k8s"
 
 	"google.golang.org/grpc"
 	k8score "k8s.io/api/core/v1"
@@ -135,9 +138,8 @@ func (exporter *SkyWalking) Export(events chan *k8score.Event) {
 					EndTime:   kEvent.LastTimestamp.Unix() / 1000000,
 				}
 				if exporter.config.Template != nil {
-					if err := exporter.config.Template.Render(swEvent, kEvent); err != nil {
-						logger.Log.Warnf("failed to render the template, using the default event content. %+v", err)
-					}
+					exporter.config.Template.Render(swEvent, kEvent)
+					logger.Log.Debugf("rendered event is: %+v", swEvent)
 				}
 				if err := stream.Send(swEvent); err != nil {
 					logger.Log.Errorf("failed to send event to %+v. %+v", exporter.Name(), err)
@@ -147,55 +149,42 @@ func (exporter *SkyWalking) Export(events chan *k8score.Event) {
 	}()
 }
 
-func (tmplt *EventTemplate) Render(event *sw.Event, data *k8score.Event) error {
-	var buf bytes.Buffer
+func (tmplt *EventTemplate) Render(swEvent *sw.Event, kEvent *k8score.Event) {
+	templateCtx := k8s.Registry.GetContext(kEvent)
 
-	// Render Event Message
-	if t := tmplt.messageTemplate; t != nil {
-		buf.Reset()
-		if err := t.Execute(&buf, data); err != nil {
+	logger.Log.Debugf("template context %+v", templateCtx)
+
+	render := func(t *template.Template, destination *string) error {
+		if t == nil {
+			return nil
+		}
+
+		var buf bytes.Buffer
+
+		if err := t.Execute(&buf, templateCtx); err != nil {
 			return err
 		}
+
 		if buf.Len() > 0 {
-			event.Message = buf.String()
+			*destination = buf.String()
 		}
+
+		return nil
 	}
 
-	// Render Event Source
-	if tmplt.sourceTemplate != nil {
-		// Render Event Source Service
-		if t := tmplt.sourceTemplate.serviceTemplate; t != nil {
-			buf.Reset()
-			if err := t.Execute(&buf, data); err != nil {
-				return err
-			}
-			if buf.Len() > 0 {
-				event.Source.Service = buf.String()
-			}
-		}
-		// Render Event Source Service
-		if t := tmplt.sourceTemplate.serviceInstanceTemplate; t != nil {
-			buf.Reset()
-			if err := t.Execute(&buf, data); err != nil {
-				return err
-			}
-			if buf.Len() > 0 {
-				event.Source.ServiceInstance = buf.String()
-			}
-		}
-		// Render Event Source Endpoint
-		if t := tmplt.sourceTemplate.endpointTemplate; t != nil {
-			buf.Reset()
-			if err := t.Execute(&buf, data); err != nil {
-				return err
-			}
-			if buf.Len() > 0 {
-				event.Source.Endpoint = buf.String()
-			}
-		}
+	if err := render(tmplt.messageTemplate, &swEvent.Message); err != nil {
+		logger.Log.Debugf("failed to render the template, using the default event content. %+v", err)
 	}
 
-	return nil
+	if err := render(tmplt.sourceTemplate.serviceTemplate, &swEvent.Source.Service); err != nil {
+		logger.Log.Debugf("failed to render service template, using the default event content. %+v", err)
+	}
+	if err := render(tmplt.sourceTemplate.serviceInstanceTemplate, &swEvent.Source.ServiceInstance); err != nil {
+		logger.Log.Debugf("failed to render service instance template, using the default event content. %+v", err)
+	}
+	if err := render(tmplt.sourceTemplate.endpointTemplate, &swEvent.Source.Endpoint); err != nil {
+		logger.Log.Debugf("failed to render endpoin template, using the default event content. %+v", err)
+	}
 }
 
 func (exporter *SkyWalking) Stop() {

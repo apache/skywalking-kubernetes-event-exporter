@@ -25,8 +25,8 @@ exporters:
   skywalking:
     template:
       source:
-        service: ""
-        service-instance: ""
+        service: "{{ .Service.Name }}"
+        serviceInstance: "{{ .Pod.Name }}"
         endpoint: ""
-      message: ""
+      message: "{{ .Event.Message }}" # this is default, just to demonstrate the context
     address: "127.0.0.1:11800"

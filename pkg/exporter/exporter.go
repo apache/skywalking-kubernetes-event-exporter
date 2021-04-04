@@ -56,8 +56,8 @@ type SourceTemplate struct {
 }
 
 type EventTemplate struct {
-	Source          *event.Source `mapstructure:"source"`
-	sourceTemplate  *SourceTemplate
+	Source          event.Source `mapstructure:"source"`
+	sourceTemplate  SourceTemplate
 	Message         string `mapstructure:"message"`
 	messageTemplate *template.Template
 }
@@ -69,21 +69,19 @@ func (tmplt *EventTemplate) Init() (err error) {
 		}
 	}
 
-	if tmplt.Source != nil {
-		if tmplt.Source.Service != "" {
-			if tmplt.sourceTemplate.serviceTemplate, err = template.New("EventSourceServiceTemplate").Parse(tmplt.Source.Service); err != nil {
-				return err
-			}
+	if t := tmplt.Source.Service; t != "" {
+		if tmplt.sourceTemplate.serviceTemplate, err = template.New("EventSourceServiceTemplate").Parse(t); err != nil {
+			return err
 		}
-		if tmplt.Source.ServiceInstance != "" {
-			if tmplt.sourceTemplate.serviceInstanceTemplate, err = template.New("EventServiceInstanceTemplate").Parse(tmplt.Source.ServiceInstance); err != nil {
-				return err
-			}
+	}
+	if t := tmplt.Source.ServiceInstance; t != "" {
+		if tmplt.sourceTemplate.serviceInstanceTemplate, err = template.New("EventServiceInstanceTemplate").Parse(t); err != nil {
+			return err
 		}
-		if tmplt.Source.Endpoint != "" {
-			if tmplt.sourceTemplate.endpointTemplate, err = template.New("EventEndpointTemplate").Parse(tmplt.Source.Endpoint); err != nil {
-				return err
-			}
+	}
+	if t := tmplt.Source.Endpoint; t != "" {
+		if tmplt.sourceTemplate.endpointTemplate, err = template.New("EventEndpointTemplate").Parse(t); err != nil {
+			return err
 		}
 	}
 
