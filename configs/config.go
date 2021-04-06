@@ -35,7 +35,7 @@ type FilterConfig struct {
 	reasonRegExp    *regexp.Regexp
 	Message         string `yaml:"message"`
 	messageRegExp   *regexp.Regexp
-	MinCount        int32  `yaml:"min-count"`
+	MinCount        int32  `yaml:"minCount"`
 	Type            string `yaml:"type"`
 	typeRegExp      *regexp.Regexp
 	Action          string `yaml:"action"`
@@ -72,6 +72,9 @@ func (filter *FilterConfig) Filter(event *v1.Event) bool {
 		return true
 	}
 	if filter.Message != "" && !filter.messageRegExp.MatchString(event.Message) {
+		return true
+	}
+	if event.Count < filter.MinCount {
 		return true
 	}
 	if filter.Type != "" && !filter.typeRegExp.MatchString(event.Type) {
