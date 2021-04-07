@@ -16,28 +16,7 @@
 # under the License.
 #
 
-export PATH := $(PATH):$(HOME)/usr/local/bin
-export GO111MODULE := on
-
-APP = skywalking-kubernetes-event-exporter
-VERSION ?= latest
-OUT_DIR = bin
-ARCH := $(shell uname)
-OSNAME := $(if $(findstring Darwin,$(ARCH)),darwin,linux)
-
-GO := GO111MODULE=on go
-GO_PATH = $(shell $(GO) env GOPATH)
-GO_BUILD = $(GO) build
-GO_TEST = $(GO) test
-GO_LINT = $(GO_PATH)/bin/golangci-lint
-GO_BUILD_LDFLAGS = -X main.version=$(VERSION)
-
-PLATFORMS := windows linux darwin
-os = $(word 1, $@)
-ARCH = amd64
-
-RELEASE_BIN = $(APP)-$(VERSION)-bin
-RELEASE_SRC = $(APP)-$(VERSION)-src
+include scripts/base.mk
 
 all: clean lint test build
 
@@ -72,10 +51,6 @@ $(PLATFORMS):
 
 .PHONY: build
 build: windows linux darwin
-
-.PHONY: docker
-docker:
-	docker build . -t $(APP):$(VERSION)
 
 .PHONY: clean
 clean:

@@ -5,9 +5,9 @@
 # the Apache License, Version 2.0 (the "License"); you may
 # not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -16,42 +16,25 @@
 # under the License.
 #
 
-name: Check
+# In order to build the Docker image, go to the root directory of this repo, and run
+# make docker
 
-on:
-  pull_request:
+FROM golang:1.16-alpine AS build
 
-jobs:
-  build-and-test:
-    name: Build and Test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
+WORKDIR /skywalking
 
-      - uses: actions/setup-go@v2
-        with:
-          go-version: 1.16
+ARG VERSION=latest
 
-      - name: Check License
-        uses: apache/skywalking-eyes@main
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+COPY go.* ./
 
-      - name: Test
-        run: make test
+RUN go mod download
 
-      - name: Build
-        run: make
+COPY . .
 
-      - name: Build Docker Image
-        run: make -C build/package/docker
+RUN apk add --no-cache make && VERSION=$VERSION make linux
 
-  gateway:
-    name: Gateway
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "Just to make the check statuses passed"
-    needs:
-      - build-and-test
+FROM alpine:3
+
+COPY --from=build /skywalking/bin/linux/skywalking-kubernetes-event-exporter /skywalking-kubernetes-event-exporter
+
+ENTRYPOINT ["/skywalking-kubernetes-event-exporter", "start"]

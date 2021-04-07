@@ -30,10 +30,11 @@ filters:
 
 exporters:         # defines and configures the exporters that can be used in the `filters` section above.
   skywalking:      # the exporter name, which is declared in the struct type `Exporter`'s Name function.
-    template:      # exporter-specific configurations, different exporter may have different configuration contents.
+    # Below are exporter-specific configurations, different exporter may have different configuration contents.
+    template:      # the event template of SkyWalking exporter, it can be composed of metadata like Event, Pod, and Service.
       source:
         service: "{{ .Service.Name }}"
         serviceInstance: "{{ .Pod.Name }}"
         endpoint: ""
       message: "{{ .Event.Message }}" # this is default, just to demonstrate the context
-    address: "127.0.0.1:11800"
+    address: "127.0.0.1:11800" # the SkyWalking backend address where this exporter will export to.

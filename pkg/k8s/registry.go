@@ -140,6 +140,13 @@ func (r *registry) GetContext(e *corev1.Event) TemplateContext {
 		result.Service = r.idSvcMap[svcID]
 	}
 
+	if result.Pod == nil {
+		result.Pod = &corev1.Pod{}
+	}
+	if result.Service == nil {
+		result.Service = &corev1.Service{}
+	}
+
 	return result
 }
 
