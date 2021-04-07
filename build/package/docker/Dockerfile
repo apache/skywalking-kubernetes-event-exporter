@@ -29,7 +29,7 @@ COPY go.* ./
 
 RUN go mod download
 
-COPY .. .
+COPY . .
 
 RUN apk add --no-cache make && VERSION=$VERSION make linux
 
