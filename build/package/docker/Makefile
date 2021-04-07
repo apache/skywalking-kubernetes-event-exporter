@@ -5,9 +5,9 @@
 # the Apache License, Version 2.0 (the "License"); you may
 # not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -16,42 +16,15 @@
 # under the License.
 #
 
-name: Check
+include ../../../scripts/base.mk
 
-on:
-  pull_request:
+all: build
 
-jobs:
-  build-and-test:
-    name: Build and Test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
+.PHONY: build
+build:
+	cd ../../.. ; \
+	docker build --build-arg VERSION=$(VERSION) . -f build/package/docker/Dockerfile -t $(HUB)/$(APP):$(VERSION)
 
-      - uses: actions/setup-go@v2
-        with:
-          go-version: 1.16
-
-      - name: Check License
-        uses: apache/skywalking-eyes@main
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Test
-        run: make test
-
-      - name: Build
-        run: make
-
-      - name: Build Docker Image
-        run: make -C build/package/docker
-
-  gateway:
-    name: Gateway
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "Just to make the check statuses passed"
-    needs:
-      - build-and-test
+.PHONY: push
+push: build
+	docker push $(HUB)/$(APP):$(VERSION)

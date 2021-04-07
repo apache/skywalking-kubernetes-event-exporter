@@ -5,9 +5,9 @@
 # the Apache License, Version 2.0 (the "License"); you may
 # not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -16,42 +16,23 @@
 # under the License.
 #
 
-name: Check
+HUB ?= docker.io/apache
+APP = skywalking-kubernetes-event-exporter
+VERSION ?= $(shell git rev-parse --short HEAD)
+OUT_DIR = bin
+ARCH := $(shell uname)
+OSNAME := $(if $(findstring Darwin,$(ARCH)),darwin,linux)
 
-on:
-  pull_request:
+GO := GO111MODULE=on go
+GO_PATH = $(shell $(GO) env GOPATH)
+GO_BUILD = $(GO) build
+GO_TEST = $(GO) test
+GO_LINT = $(GO_PATH)/bin/golangci-lint
+GO_BUILD_LDFLAGS = -X main.version=$(VERSION)
 
-jobs:
-  build-and-test:
-    name: Build and Test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
+PLATFORMS := windows linux darwin
+os = $(word 1, $@)
+ARCH = amd64
 
-      - uses: actions/setup-go@v2
-        with:
-          go-version: 1.16
-
-      - name: Check License
-        uses: apache/skywalking-eyes@main
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Test
-        run: make test
-
-      - name: Build
-        run: make
-
-      - name: Build Docker Image
-        run: make -C build/package/docker
-
-  gateway:
-    name: Gateway
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "Just to make the check statuses passed"
-    needs:
-      - build-and-test
+RELEASE_BIN = $(APP)-$(VERSION)-bin
+RELEASE_SRC = $(APP)-$(VERSION)-src

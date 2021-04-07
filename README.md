@@ -15,18 +15,30 @@ with the system metrics and thus gives you an overview about how the metrics are
 
 Configurations are in YAML format, or config map if running inside Kubernetes,
 otherwise, [the default configuration file](assets/default-config.yaml) will be used if there is neither `-c` option
-specified in the command line interface nor config map is created in Kubernetes.
+specified in the command line interface nor config map created in Kubernetes.
 
 All available configuration items and their documentations can be found
 in [the default configuration file](assets/default-config.yaml).
 
 ## Deployments
 
-Go to [the /deployments](deployments) directory, modify according to your needs,
-and `kubectl apply -f skywalking-kubernetes-event-exporter.yaml`.
+Go to [the /deployments/release](deployments/release) directory, modify according to your needs, and
+run `kustomize build | kubectl apply -f -`.
 
 You can also simply run `skywalking-kubernetes-event-exporter start` in command line interface to run this exporter from
 outside of Kubernetes.
+
+## Build and Test
+
+In order to build and test the exporter before an Apache official release, you need set a Docker registry where you can
+push the images, do this by `export HUB=<your-docker-hub-registry>`, and then run `make -C build/package/docker push`
+to build and push the Docker images, finally, run `make -C deployments/dev deploy` to deploy the exporter.
+
+```shell
+export HUB=<your-docker-hub-registry>
+make -C build/package/docker push
+make -C deployments/dev deploy
+```
 
 # Download
 
