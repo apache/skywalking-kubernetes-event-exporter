@@ -25,7 +25,7 @@ WORKDIR /skywalking
 
 ARG VERSION=latest
 
-COPY go.* .
+COPY go.* ./
 
 RUN go mod download
 
