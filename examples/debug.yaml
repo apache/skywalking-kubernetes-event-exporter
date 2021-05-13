@@ -27,10 +27,10 @@ filters:
     name: ""       # filter events of the specified involved object name, regular expression like ".*bookinfo.*" is supported.
     service: "[^\\s]{1,}"  # filter events belonging to services whose name is not empty.
     exporters:     # events satisfy this filter can be exported into several exporters that are defined in the `exporters` section below.
-      - skywalking
+      - console
 
 exporters:         # defines and configures the exporters that can be used in the `filters` section above.
-  skywalking:      # the exporter name, which is declared in the struct type `Exporter`'s Name function.
+  console:      # the exporter name, which is declared in the struct type `Exporter`'s Name function.
     # Below are exporter-specific configurations, different exporter may have different configuration contents.
     template:      # the event template of SkyWalking exporter, it can be composed of metadata like Event, Pod, and Service.
       source:
@@ -38,4 +38,3 @@ exporters:         # defines and configures the exporters that can be used in th
         serviceInstance: "{{ .Pod.Name }}"
         endpoint: ""
       message: "{{ .Event.Message }}" # this is default, just to demonstrate the context
-    address: "127.0.0.1:11800" # the SkyWalking backend address where this exporter will export to.

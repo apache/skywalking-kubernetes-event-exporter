@@ -20,6 +20,10 @@ specified in the command line interface nor config map created in Kubernetes.
 All available configuration items and their documentations can be found
 in [the default configuration file](assets/default-config.yaml).
 
+## Exporters
+
+The available exporters are listed [here](docs/exporters.md).
+
 ## Deployments
 
 Go to [the /deployments/release](deployments/release) directory, modify according to your needs, and

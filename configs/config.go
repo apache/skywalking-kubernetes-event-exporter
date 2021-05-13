@@ -21,7 +21,9 @@ package configs
 
 import (
 	"regexp"
+	"strings"
 
+	"github.com/apache/skywalking-kubernetes-event-exporter/pkg/k8s"
 	"gopkg.in/yaml.v3"
 	v1 "k8s.io/api/core/v1"
 
@@ -46,6 +48,8 @@ type FilterConfig struct {
 	namespaceRegExp *regexp.Regexp
 	Name            string `yaml:"name"`
 	nameRegExp      *regexp.Regexp
+	Service         string `yaml:"service"`
+	serviceRegExp   *regexp.Regexp
 
 	Exporters []string `yaml:"exporters"`
 }
@@ -60,6 +64,7 @@ func (filter *FilterConfig) Init() {
 	filter.kindRegExp = regexp.MustCompile(filter.Kind)
 	filter.namespaceRegExp = regexp.MustCompile(filter.Namespace)
 	filter.nameRegExp = regexp.MustCompile(filter.Name)
+	filter.serviceRegExp = regexp.MustCompile(filter.Service)
 }
 
 // Filter the given event with this filter instance.
@@ -83,14 +88,20 @@ func (filter *FilterConfig) Filter(event *v1.Event) bool {
 	if filter.Action != "" && !filter.actionRegExp.MatchString(event.Action) {
 		return true
 	}
-	if filter.Kind != "" && !filter.kindRegExp.MatchString(event.Kind) {
+	if filter.Kind != "" && !filter.kindRegExp.MatchString(event.InvolvedObject.Kind) {
 		return true
 	}
-	if filter.Namespace != "" && !filter.namespaceRegExp.MatchString(event.Namespace) {
+	if filter.Namespace != "" && !filter.namespaceRegExp.MatchString(event.InvolvedObject.Namespace) {
 		return true
 	}
-	if filter.Name != "" && !filter.nameRegExp.MatchString(event.Name) {
+	if filter.Name != "" && !filter.nameRegExp.MatchString(event.InvolvedObject.Name) {
 		return true
+	}
+	if filter.Service != "" {
+		context := k8s.Registry.GetContext(event)
+		if svcName := strings.TrimSpace(context.Service.Name); !filter.serviceRegExp.MatchString(svcName) {
+			return true
+		}
 	}
 	return false
 }
