@@ -39,6 +39,7 @@ import (
 	"github.com/apache/skywalking-kubernetes-event-exporter/pkg/event"
 )
 
+// SkyWalking Exporter exports the events into Apache SkyWalking OAP server.
 type SkyWalking struct {
 	config     SkyWalkingConfig
 	client     sw.EventServiceClient
@@ -138,7 +139,7 @@ func (exporter *SkyWalking) Export(events chan *k8score.Event) {
 					EndTime:   kEvent.LastTimestamp.Unix() / 1000000,
 				}
 				if exporter.config.Template != nil {
-					exporter.config.Template.Render(swEvent, kEvent)
+					exporter.config.Template.render(swEvent, kEvent)
 					logger.Log.Debugf("rendered event is: %+v", swEvent)
 				}
 				if err := stream.Send(swEvent); err != nil {
@@ -149,7 +150,7 @@ func (exporter *SkyWalking) Export(events chan *k8score.Event) {
 	}()
 }
 
-func (tmplt *EventTemplate) Render(swEvent *sw.Event, kEvent *k8score.Event) {
+func (tmplt *EventTemplate) render(swEvent *sw.Event, kEvent *k8score.Event) {
 	templateCtx := k8s.Registry.GetContext(kEvent)
 
 	logger.Log.Debugf("template context %+v", templateCtx)
