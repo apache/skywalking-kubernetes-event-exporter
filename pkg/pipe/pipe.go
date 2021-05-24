@@ -20,13 +20,14 @@
 package pipe
 
 import (
+	"context"
 	"fmt"
+	"time"
 
 	v1 "k8s.io/api/core/v1"
 
 	"github.com/apache/skywalking-kubernetes-event-exporter/configs"
 	"github.com/apache/skywalking-kubernetes-event-exporter/internal/pkg/logger"
-	"github.com/apache/skywalking-kubernetes-event-exporter/pkg/event"
 	exp "github.com/apache/skywalking-kubernetes-event-exporter/pkg/exporter"
 	"github.com/apache/skywalking-kubernetes-event-exporter/pkg/k8s"
 )
@@ -40,13 +41,11 @@ type workflow struct {
 type Pipe struct {
 	Watcher   *k8s.EventWatcher
 	workflows []workflow
-	stopper   chan struct{}
 }
 
-func (p *Pipe) Init() error {
+func (p *Pipe) Init(ctx context.Context) error {
 	logger.Log.Debugf("initializing pipe")
 
-	p.stopper = make(chan struct{})
 	p.workflows = []workflow{}
 
 	initialized := map[string]bool{}
@@ -65,7 +64,7 @@ func (p *Pipe) Init() error {
 				logger.Log.Debugf("exporter %+v has been initialized, skip", name)
 				continue
 			}
-			if err := exporter.Init(); err != nil {
+			if err := exporter.Init(ctx); err != nil {
 				return err
 			}
 			initialized[name] = true
@@ -89,45 +88,31 @@ func (p *Pipe) Init() error {
 	return nil
 }
 
-func (p *Pipe) Start() error {
-	p.Watcher.Start()
+func (p *Pipe) Start(ctx context.Context) error {
+	p.Watcher.Start(ctx)
 
-	k8s.Registry.Start()
+	k8s.Registry.Start(ctx)
 
 	for _, wkfl := range p.workflows {
-		go wkfl.exporter.Export(wkfl.events)
+		go wkfl.exporter.Export(ctx, wkfl.events)
 	}
 
-	for stopped := false; !stopped; {
+	for {
 		select {
-		case <-p.stopper:
-			for _, w := range p.workflows {
-				w.events <- event.Stopper
-			}
-			stopped = true
+		case <-ctx.Done():
+			logger.Log.Debugf("stopping pipe")
+			return nil
 		case e := <-p.Watcher.Events:
-			for _, w := range p.workflows {
-				if w.filter.Filter(e) {
-					continue
-				}
-				w.events <- e
+			for _, wkfl := range p.workflows {
+				go func(w workflow) {
+					fCtx, cancel := context.WithTimeout(ctx, time.Minute)
+					defer cancel()
+
+					if !w.filter.Filter(fCtx, e) {
+						w.events <- e
+					}
+				}(wkfl)
 			}
 		}
 	}
-
-	return nil
-}
-
-func (p *Pipe) Stop() {
-	p.Watcher.Stop()
-
-	for _, w := range p.workflows {
-		logger.Log.Debugf("stopping exporter %+v.", w.exporter.Name())
-		w.exporter.Stop()
-	}
-
-	k8s.Registry.Stop()
-
-	p.stopper <- struct{}{}
-	close(p.stopper)
 }

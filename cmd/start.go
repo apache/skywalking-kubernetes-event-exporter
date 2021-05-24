@@ -20,6 +20,7 @@
 package main
 
 import (
+	"context"
 	"os"
 	"os/signal"
 	"syscall"
@@ -40,7 +41,11 @@ var startCmd = &cobra.Command{
 	Use:   "start",
 	Short: "Start skywalking-kubernetes-event-exporter",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		watcher, err := k8s.WatchEvents(v1.NamespaceAll)
+		ctx, cancel := context.WithCancel(context.Background())
+
+		addShutDownHook(cancel)
+
+		watcher, err := k8s.WatchEvents(ctx, v1.NamespaceAll)
 		if err != nil {
 			return err
 		}
@@ -49,18 +54,16 @@ var startCmd = &cobra.Command{
 			Watcher: watcher,
 		}
 
-		if err = p.Init(); err != nil {
+		if err = p.Init(ctx); err != nil {
 			return err
 		}
 
-		addShutDownHook(p.Stop)
-
-		return p.Start()
+		return p.Start(ctx)
 	},
 }
 
 func addShutDownHook(stopFunc func()) {
-	c := make(chan os.Signal)
+	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c

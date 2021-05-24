@@ -3,6 +3,7 @@ module github.com/apache/skywalking-kubernetes-event-exporter
 go 1.16
 
 require (
+	github.com/hashicorp/golang-lru v0.5.4
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.1.3
 	google.golang.org/grpc v1.36.1

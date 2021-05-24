@@ -20,31 +20,26 @@
 package exporter
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"time"
 
-	sw "skywalking.apache.org/repo/goapi/collect/event/v3"
+	"github.com/sirupsen/logrus"
 
-	"github.com/apache/skywalking-kubernetes-event-exporter/pkg/k8s"
+	sw "skywalking.apache.org/repo/goapi/collect/event/v3"
 
 	"google.golang.org/grpc"
 	k8score "k8s.io/api/core/v1"
 
 	"github.com/apache/skywalking-kubernetes-event-exporter/configs"
 	"github.com/apache/skywalking-kubernetes-event-exporter/internal/pkg/logger"
-	"github.com/apache/skywalking-kubernetes-event-exporter/pkg/event"
 )
 
 // SkyWalking Exporter exports the events into Apache SkyWalking OAP server.
 type SkyWalking struct {
-	config     SkyWalkingConfig
-	client     sw.EventServiceClient
-	connection *grpc.ClientConn
-	stopper    chan struct{}
+	config SkyWalkingConfig
+	client sw.EventServiceClient
 }
 
 type SkyWalkingConfig struct {
@@ -53,13 +48,11 @@ type SkyWalkingConfig struct {
 }
 
 func init() {
-	s := &SkyWalking{
-		stopper: make(chan struct{}),
-	}
+	s := &SkyWalking{}
 	RegisterExporter(s.Name(), s)
 }
 
-func (exporter *SkyWalking) Init() error {
+func (exporter *SkyWalking) Init(ctx context.Context) error {
 	config := SkyWalkingConfig{}
 
 	if c := configs.GlobalConfig.Exporters[exporter.Name()]; c == nil {
@@ -80,8 +73,15 @@ func (exporter *SkyWalking) Init() error {
 	}
 
 	exporter.config = config
-	exporter.connection = conn
 	exporter.client = sw.NewEventServiceClient(conn)
+
+	go func() {
+		<-ctx.Done()
+
+		if err := conn.Close(); err != nil {
+			logger.Log.Errorf("failed to close connection. %+v", err)
+		}
+	}()
 
 	return nil
 }
@@ -90,109 +90,74 @@ func (exporter *SkyWalking) Name() string {
 	return "skywalking"
 }
 
-// TODO error handling
-func (exporter *SkyWalking) Export(events chan *k8score.Event) {
+func (exporter *SkyWalking) Export(ctx context.Context, events chan *k8score.Event) {
 	logger.Log.Debugf("exporting events into %+v", exporter.Name())
 
-	stream, err := exporter.client.Collect(context.Background())
+	stream, err := exporter.client.Collect(ctx)
+
 	for err != nil {
 		select {
-		case <-exporter.stopper:
-			drain(events)
+		case <-ctx.Done():
+			logger.Log.Debugf("stopping exporter %+v", exporter.Name())
+			if err = stream.CloseSend(); err != nil {
+				logger.Log.Warnf("failed to close stream. %+v", err)
+			}
 			return
 		default:
 			logger.Log.Errorf("failed to connect to SkyWalking server. %+v", err)
 			time.Sleep(3 * time.Second)
-			stream, err = exporter.client.Collect(context.Background())
+			stream, err = exporter.client.Collect(ctx)
 		}
 	}
 
-	defer func() {
-		if err := stream.CloseSend(); err != nil {
-			logger.Log.Warnf("failed to close stream. %+v", err)
-		}
-	}()
-
-	func() {
-		for {
-			select {
-			case <-exporter.stopper:
-				drain(events)
-				return
-			case kEvent := <-events:
-				if kEvent == event.Stopper {
-					return
-				}
-				logger.Log.Debugf("exporting event to %v: %v", exporter.Name(), kEvent)
-
-				t := sw.Type_Normal
-				if kEvent.Type == "Warning" {
-					t = sw.Type_Error
-				}
-				swEvent := &sw.Event{
-					Uuid:      string(kEvent.UID),
-					Source:    &sw.Source{},
-					Name:      kEvent.Reason,
-					Type:      t,
-					Message:   kEvent.Message,
-					StartTime: kEvent.FirstTimestamp.UnixNano() / 1000000,
-					EndTime:   kEvent.LastTimestamp.Unix() / 1000000,
-				}
-				if exporter.config.Template != nil {
-					exporter.config.Template.render(swEvent, kEvent)
-					logger.Log.Debugf("rendered event is: %+v", swEvent)
-				}
-				if err := stream.Send(swEvent); err != nil {
-					logger.Log.Errorf("failed to send event to %+v. %+v", exporter.Name(), err)
+	for {
+		select {
+		case <-ctx.Done():
+			logger.Log.Debugf("stopping exporter %+v", exporter.Name())
+			return
+		case kEvent := <-events:
+			if logger.Log.IsLevelEnabled(logrus.DebugLevel) {
+				if bytes, err := json.Marshal(kEvent); err == nil {
+					logger.Log.Debugf("exporting event to %v: %v", exporter.Name(), string(bytes))
 				}
 			}
+
+			t := sw.Type_Normal
+			if kEvent.Type == k8score.EventTypeWarning {
+				t = sw.Type_Error
+			}
+			swEvent := &sw.Event{
+				Uuid:      string(kEvent.UID),
+				Source:    &sw.Source{},
+				Name:      kEvent.Reason,
+				Type:      t,
+				Message:   kEvent.Message,
+				StartTime: kEvent.FirstTimestamp.UnixNano() / 1000000,
+				EndTime:   kEvent.LastTimestamp.UnixNano() / 1000000,
+			}
+			if exporter.config.Template != nil {
+				go func() {
+					renderCtx, cancel := context.WithTimeout(ctx, time.Minute)
+					done := exporter.config.Template.render(renderCtx, swEvent, kEvent)
+					select {
+					case <-done:
+						logger.Log.Debugf("done: rendered event is: %+v", swEvent)
+						exporter.export(stream, swEvent)
+					case <-renderCtx.Done():
+						logger.Log.Debugf("canceled: rendered event is: %+v", swEvent)
+						exporter.export(stream, swEvent)
+					}
+					cancel()
+				}()
+			} else {
+				exporter.export(stream, swEvent)
+			}
 		}
-	}()
-}
-
-func (tmplt *EventTemplate) render(swEvent *sw.Event, kEvent *k8score.Event) {
-	templateCtx := k8s.Registry.GetContext(kEvent)
-
-	logger.Log.Debugf("template context %+v", templateCtx)
-
-	render := func(t *template.Template, destination *string) error {
-		if t == nil {
-			return nil
-		}
-
-		var buf bytes.Buffer
-
-		if err := t.Execute(&buf, templateCtx); err != nil {
-			return err
-		}
-
-		if buf.Len() > 0 {
-			*destination = buf.String()
-		}
-
-		return nil
-	}
-
-	if err := render(tmplt.messageTemplate, &swEvent.Message); err != nil {
-		logger.Log.Debugf("failed to render the template, using the default event content. %+v", err)
-	}
-
-	if err := render(tmplt.sourceTemplate.serviceTemplate, &swEvent.Source.Service); err != nil {
-		logger.Log.Debugf("failed to render service template, using the default event content. %+v", err)
-	}
-	if err := render(tmplt.sourceTemplate.serviceInstanceTemplate, &swEvent.Source.ServiceInstance); err != nil {
-		logger.Log.Debugf("failed to render service instance template, using the default event content. %+v", err)
-	}
-	if err := render(tmplt.sourceTemplate.endpointTemplate, &swEvent.Source.Endpoint); err != nil {
-		logger.Log.Debugf("failed to render endpoin template, using the default event content. %+v", err)
 	}
 }
 
-func (exporter *SkyWalking) Stop() {
-	exporter.stopper <- struct{}{}
-	close(exporter.stopper)
-
-	if err := exporter.connection.Close(); err != nil {
-		logger.Log.Errorf("failed to close connection. %+v", err)
+func (exporter SkyWalking) export(stream sw.EventService_CollectClient, swEvent *sw.Event) {
+	if err := stream.Send(swEvent); err != nil {
+		logger.Log.Errorf("failed to send event to %+v. %+v", exporter.Name(), err)
 	}
 }

@@ -20,6 +20,7 @@
 package configs
 
 import (
+	"context"
 	"testing"
 
 	v1 "k8s.io/api/core/v1"
@@ -98,7 +99,7 @@ func TestFilterConfig_Filter(t *testing.T) {
 				Exporters: tt.fields.Exporters,
 			}
 			filter.Init()
-			if got := filter.Filter(tt.args.event); got != tt.want {
+			if got := filter.Filter(context.Background(), tt.args.event); got != tt.want {
 				t.Errorf("Filter() = %v, want %v", got, tt.want)
 			}
 		})

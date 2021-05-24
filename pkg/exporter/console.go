@@ -20,22 +20,26 @@
 package exporter
 
 import (
+	"context"
 	"encoding/json"
+
 	"fmt"
+
+	"time"
+
+	"github.com/sirupsen/logrus"
 	sw "skywalking.apache.org/repo/goapi/collect/event/v3"
 
 	k8score "k8s.io/api/core/v1"
 
 	"github.com/apache/skywalking-kubernetes-event-exporter/configs"
 	"github.com/apache/skywalking-kubernetes-event-exporter/internal/pkg/logger"
-	"github.com/apache/skywalking-kubernetes-event-exporter/pkg/event"
 )
 
 // Console Exporter exports the events into console logs, this exporter is typically
 // used for debugging.
 type Console struct {
-	config  ConsoleConfig
-	stopper chan struct{}
+	config ConsoleConfig
 }
 
 type ConsoleConfig struct {
@@ -43,13 +47,11 @@ type ConsoleConfig struct {
 }
 
 func init() {
-	s := &Console{
-		stopper: make(chan struct{}),
-	}
+	s := &Console{}
 	RegisterExporter(s.Name(), s)
 }
 
-func (exporter *Console) Init() error {
+func (exporter *Console) Init(context.Context) error {
 	config := ConsoleConfig{}
 
 	if c := configs.GlobalConfig.Exporters[exporter.Name()]; c == nil {
@@ -73,49 +75,59 @@ func (exporter *Console) Name() string {
 	return "console"
 }
 
-func (exporter *Console) Export(events chan *k8score.Event) {
+func (exporter *Console) Export(ctx context.Context, events chan *k8score.Event) {
 	logger.Log.Debugf("exporting events into %+v", exporter.Name())
 
-	func() {
-		for {
-			select {
-			case <-exporter.stopper:
-				drain(events)
-				return
-			case kEvent := <-events:
-				if kEvent == event.Stopper {
-					return
-				}
-				logger.Log.Debugf("exporting event to %v: %v", exporter.Name(), kEvent)
-
-				t := sw.Type_Normal
-				if kEvent.Type == "Warning" {
-					t = sw.Type_Error
-				}
-				swEvent := &sw.Event{
-					Uuid:      string(kEvent.UID),
-					Source:    &sw.Source{},
-					Name:      kEvent.Reason,
-					Type:      t,
-					Message:   kEvent.Message,
-					StartTime: kEvent.FirstTimestamp.UnixNano() / 1000000,
-					EndTime:   kEvent.LastTimestamp.Unix() / 1000000,
-				}
-				if exporter.config.Template != nil {
-					exporter.config.Template.render(swEvent, kEvent)
-					logger.Log.Debugf("rendered event is: %+v", swEvent)
-				}
-				if bytes, err := json.Marshal(swEvent); err != nil {
-					logger.Log.Errorf("failed to send event to %+v, %+v", exporter.Name(), err)
-				} else {
-					logger.Log.Infoln(string(bytes))
+	for {
+		select {
+		case <-ctx.Done():
+			logger.Log.Debugf("stopping exporter %+v", exporter.Name())
+			return
+		case kEvent := <-events:
+			if logger.Log.IsLevelEnabled(logrus.DebugLevel) {
+				if bytes, err := json.Marshal(kEvent); err == nil {
+					logger.Log.Debugf("exporting event to %v: %v", exporter.Name(), string(bytes))
 				}
 			}
+
+			t := sw.Type_Normal
+			if kEvent.Type == k8score.EventTypeWarning {
+				t = sw.Type_Error
+			}
+			swEvent := &sw.Event{
+				Uuid:      string(kEvent.UID),
+				Source:    &sw.Source{},
+				Name:      kEvent.Reason,
+				Type:      t,
+				Message:   kEvent.Message,
+				StartTime: kEvent.FirstTimestamp.UnixNano() / 1000000,
+				EndTime:   kEvent.LastTimestamp.Unix() / 1000000,
+			}
+			if exporter.config.Template != nil {
+				go func() {
+					renderCtx, cancel := context.WithTimeout(ctx, time.Minute)
+					done := exporter.config.Template.render(renderCtx, swEvent, kEvent)
+					select {
+					case <-done:
+						logger.Log.Debugf("rendered event is: %+v", swEvent)
+						exporter.export(swEvent)
+					case <-renderCtx.Done():
+						logger.Log.Debugf("rendered event is: %+v", swEvent)
+						exporter.export(swEvent)
+					}
+					cancel()
+				}()
+			} else {
+				exporter.export(swEvent)
+			}
 		}
-	}()
+	}
 }
 
-func (exporter *Console) Stop() {
-	exporter.stopper <- struct{}{}
-	close(exporter.stopper)
+func (exporter *Console) export(swEvent *sw.Event) {
+	if bytes, err := json.Marshal(swEvent); err != nil {
+		logger.Log.Errorf("failed to send event to %+v, %+v", exporter.Name(), err)
+	} else {
+		logger.Log.Infoln(string(bytes))
+	}
 }
