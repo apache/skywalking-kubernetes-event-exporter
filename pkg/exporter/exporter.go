@@ -20,7 +20,8 @@
 package exporter
 
 import (
-	"html/template"
+	"context"
+	"text/template"
 
 	v1 "k8s.io/api/core/v1"
 
@@ -30,9 +31,8 @@ import (
 
 type Exporter interface {
 	Name() string
-	Init() error
-	Export(events chan *v1.Event)
-	Stop()
+	Init(ctx context.Context) error
+	Export(ctx context.Context, events chan *v1.Event)
 }
 
 var exporters = map[string]Exporter{}

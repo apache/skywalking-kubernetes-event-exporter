@@ -20,7 +20,10 @@
 package k8s
 
 import (
+	"context"
+
 	v1 "k8s.io/api/core/v1"
+
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
@@ -31,7 +34,6 @@ import (
 type EventWatcher struct {
 	Events   chan *v1.Event
 	informer cache.SharedIndexInformer
-	stopCh   chan struct{}
 }
 
 func (w EventWatcher) OnAdd(obj interface{}) {
@@ -45,20 +47,19 @@ func (w EventWatcher) OnUpdate(_, newObj interface{}) {
 func (w EventWatcher) OnDelete(_ interface{}) {
 }
 
-func (w EventWatcher) Start() {
+func (w EventWatcher) Start(ctx context.Context) {
 	logger.Log.Debugf("starting event watcher")
 
-	go w.informer.Run(w.stopCh)
+	go w.informer.Run(ctx.Done())
+
+	go func() {
+		<-ctx.Done()
+
+		logger.Log.Debugf("stopping event watcher")
+	}()
 }
 
-func (w EventWatcher) Stop() {
-	logger.Log.Debugf("stopping event watcher")
-
-	w.stopCh <- struct{}{}
-	close(w.stopCh)
-}
-
-func WatchEvents(ns string) (*EventWatcher, error) {
+func WatchEvents(_ context.Context, ns string) (*EventWatcher, error) {
 	config, err := GetConfig()
 	if err != nil {
 		return nil, err
@@ -70,7 +71,6 @@ func WatchEvents(ns string) (*EventWatcher, error) {
 	watcher := &EventWatcher{
 		informer: informer,
 		Events:   make(chan *v1.Event),
-		stopCh:   make(chan struct{}),
 	}
 
 	informer.AddEventHandler(watcher)

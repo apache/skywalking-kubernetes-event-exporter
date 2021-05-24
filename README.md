@@ -5,7 +5,7 @@
 
 [![Check](https://github.com/apache/skywalking-kubernetes-event-exporter/actions/workflows/build-and-test.yaml/badge.svg)](https://github.com/apache/skywalking-kubernetes-event-exporter/actions/workflows/build-and-test.yaml)
 
-<img src="http://skywalking.apache.org/assets/logo.svg" alt="Sky Walking logo" height="90px" align="right" />
+<img src="https://skywalking.apache.org/assets/logo.svg" alt="Sky Walking logo" height="90px" align="right" />
 
 SkyWalking Kubernetes Event Exporter is able to watch, filter, and send Kubernetes events
 into [Apache SkyWalking](https://github.com/apache/skywalking) backend, afterwards, SkyWalking associates the events

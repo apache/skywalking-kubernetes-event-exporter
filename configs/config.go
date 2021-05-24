@@ -20,16 +20,17 @@
 package configs
 
 import (
+	"context"
+
+	"gopkg.in/yaml.v3"
+
+	v1 "k8s.io/api/core/v1"
+
 	"regexp"
 	"strings"
 
-	"github.com/apache/skywalking-kubernetes-event-exporter/pkg/k8s"
-	"gopkg.in/yaml.v3"
-	v1 "k8s.io/api/core/v1"
-
 	"github.com/apache/skywalking-kubernetes-event-exporter/internal/pkg/logger"
-
-	evnt "github.com/apache/skywalking-kubernetes-event-exporter/pkg/event"
+	"github.com/apache/skywalking-kubernetes-event-exporter/pkg/k8s"
 )
 
 type FilterConfig struct {
@@ -69,10 +70,7 @@ func (filter *FilterConfig) Init() {
 
 // Filter the given event with this filter instance.
 // Return true if the event is filtered, return false otherwise.
-func (filter *FilterConfig) Filter(event *v1.Event) bool {
-	if event == evnt.Stopper {
-		return false
-	}
+func (filter *FilterConfig) Filter(ctx context.Context, event *v1.Event) bool {
 	if filter.Reason != "" && !filter.reasonRegExp.MatchString(event.Reason) {
 		return true
 	}
@@ -98,8 +96,8 @@ func (filter *FilterConfig) Filter(event *v1.Event) bool {
 		return true
 	}
 	if filter.Service != "" {
-		context := k8s.Registry.GetContext(event)
-		if svcName := strings.TrimSpace(context.Service.Name); !filter.serviceRegExp.MatchString(svcName) {
+		c := <-k8s.Registry.GetContext(ctx, event)
+		if svcName := strings.TrimSpace(c.Service.Name); !filter.serviceRegExp.MatchString(svcName) {
 			return true
 		}
 	}

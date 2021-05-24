@@ -20,14 +20,19 @@
 package k8s
 
 import (
+	"context"
+	"fmt"
+
+	"github.com/apache/skywalking-kubernetes-event-exporter/internal/pkg/logger"
+
+	lru "github.com/hashicorp/golang-lru"
+	corev1 "k8s.io/api/core/v1"
+
 	"time"
 
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
-
-	"github.com/apache/skywalking-kubernetes-event-exporter/internal/pkg/logger"
 )
 
 type id struct {
@@ -35,31 +40,35 @@ type id struct {
 	name      string
 }
 
+func (i id) String() string {
+	return fmt.Sprintf("%+v:%+v", i.namespace, i.name)
+}
+
 type registry struct {
 	informers []cache.SharedIndexInformer
-	stopCh    chan struct{}
 
-	podIDIpMap map[id]string
-	idSvcMap   map[id]*corev1.Service
-	idPodMap   map[id]*corev1.Pod
-	ipSvcIDMap map[string]id
+	podIDIpMap *lru.Cache // map[id]string
+	idSvcMap   *lru.Cache // map[id]*corev1.Service
+	idPodMap   *lru.Cache // map[id]*corev1.Pod
+	ipSvcIDMap *lru.Cache // map[string]id
 }
 
 func (r registry) OnAdd(obj interface{}) {
 	switch o := obj.(type) {
 	case *corev1.Pod:
-		podID := id{namespace: o.Namespace, name: o.Name}
-		r.podIDIpMap[podID] = o.Status.PodIP
-		r.idPodMap[podID] = o
+		podID := id{namespace: o.Namespace, name: o.Name}.String()
+
+		r.podIDIpMap.Add(podID, o.Status.PodIP)
+		r.idPodMap.Add(podID, o)
 	case *corev1.Service:
-		r.idSvcMap[id{namespace: o.Namespace, name: o.Name}] = o
+		svcID := id{namespace: o.Namespace, name: o.Name}.String()
+
+		r.idSvcMap.Add(svcID, o)
 	case *corev1.Endpoints:
 		for _, subset := range o.Subsets {
 			for _, address := range subset.Addresses {
-				r.ipSvcIDMap[address.IP] = id{
-					namespace: o.ObjectMeta.Namespace,
-					name:      o.ObjectMeta.Name,
-				}
+				svcID := id{namespace: o.ObjectMeta.Namespace, name: o.ObjectMeta.Name}.String()
+				r.ipSvcIDMap.Add(address.IP, svcID)
 			}
 		}
 	}
@@ -70,45 +79,15 @@ func (r registry) OnUpdate(oldObj, newObj interface{}) {
 	r.OnAdd(newObj)
 }
 
-func (r registry) OnDelete(obj interface{}) {
-	switch o := obj.(type) {
-	case *corev1.Pod:
-		podID := id{namespace: o.Namespace, name: o.Name}
-		go func() {
-			time.Sleep(3 * time.Second)
-			delete(r.podIDIpMap, podID)
-			delete(r.idPodMap, podID)
-		}()
-	case *corev1.Service:
-		go func() {
-			time.Sleep(3 * time.Second)
-			delete(r.idSvcMap, id{namespace: o.Namespace, name: o.Name})
-		}()
-	case *corev1.Endpoints:
-		go func() {
-			for _, subset := range o.Subsets {
-				for _, address := range subset.Addresses {
-					time.Sleep(3 * time.Second)
-					delete(r.ipSvcIDMap, address.IP)
-				}
-			}
-		}()
-	}
+func (r registry) OnDelete(_ interface{}) {
 }
 
-func (r *registry) Start() {
+func (r *registry) Start(ctx context.Context) {
 	logger.Log.Debugf("starting registry")
 
 	for _, informer := range r.informers {
-		go informer.Run(r.stopCh)
+		go informer.Run(ctx.Done())
 	}
-}
-
-func (r *registry) Stop() {
-	logger.Log.Debugf("stopping registry")
-
-	r.stopCh <- struct{}{}
-	close(r.stopCh)
 }
 
 type TemplateContext struct {
@@ -117,50 +96,86 @@ type TemplateContext struct {
 	Event   *corev1.Event
 }
 
-func (r *registry) GetContext(e *corev1.Event) TemplateContext {
-	result := TemplateContext{Event: e}
+func (r *registry) GetContext(ctx context.Context, e *corev1.Event) chan TemplateContext {
+	resultCh := make(chan TemplateContext)
 
-	if obj := e.InvolvedObject; obj.Kind == "Pod" {
-		podID := id{
-			namespace: obj.Namespace,
-			name:      obj.Name,
+	result := TemplateContext{
+		Event:   e,
+		Pod:     &corev1.Pod{},
+		Service: &corev1.Service{},
+	}
+
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				resultCh <- result
+				return
+			default:
+				if obj := e.InvolvedObject; obj.Kind == "Pod" {
+					podID := id{namespace: obj.Namespace, name: obj.Name}.String()
+
+					pod, ok := r.idPodMap.Get(podID)
+					if !ok {
+						break
+					}
+					result.Pod = pod.(*corev1.Pod)
+
+					podIP, ok := r.podIDIpMap.Get(podID)
+					if !ok {
+						break
+					}
+
+					svcID, ok := r.ipSvcIDMap.Get(podIP.(string))
+					if !ok {
+						break
+					}
+
+					svc, ok := r.idSvcMap.Get(svcID.(string))
+					if !ok {
+						break
+					}
+					result.Service = svc.(*corev1.Service)
+				} else if obj.Kind == "Service" {
+					svcID := id{namespace: obj.Namespace, name: obj.Name}.String()
+
+					svc, ok := r.idSvcMap.Get(svcID)
+					if !ok {
+						break
+					}
+					result.Service = svc.(*corev1.Service)
+				}
+
+				resultCh <- result
+
+				return
+			}
+			time.Sleep(3 * time.Second)
 		}
-		podIP := r.podIDIpMap[podID]
-		svcID := r.ipSvcIDMap[podIP]
+	}()
 
-		result.Pod = r.idPodMap[podID]
-		result.Service = r.idSvcMap[svcID]
-	}
-
-	if obj := e.InvolvedObject; obj.Kind == "Service" {
-		svcID := id{
-			namespace: obj.Namespace,
-			name:      obj.Name,
-		}
-		result.Service = r.idSvcMap[svcID]
-	}
-
-	if result.Pod == nil {
-		result.Pod = &corev1.Pod{}
-	}
-	if result.Service == nil {
-		result.Service = &corev1.Service{}
-	}
-
-	return result
+	return resultCh
 }
 
-var Registry = &registry{
-	stopCh: make(chan struct{}),
-
-	podIDIpMap: make(map[id]string),
-	idSvcMap:   make(map[id]*corev1.Service),
-	idPodMap:   make(map[id]*corev1.Pod),
-	ipSvcIDMap: make(map[string]id),
-}
+var Registry = &registry{}
 
 func (r *registry) Init() error {
 	logger.Log.Debugf("initializing template context registry")
+
+	var err error
+
+	if Registry.podIDIpMap, err = lru.New(1000); err != nil {
+		return err
+	}
+	if Registry.idSvcMap, err = lru.New(1000); err != nil {
+		return err
+	}
+	if Registry.idPodMap, err = lru.New(1000); err != nil {
+		return err
+	}
+	if Registry.ipSvcIDMap, err = lru.New(1000); err != nil {
+		return err
+	}
 
 	config, err := GetConfig()
 	if err != nil {
