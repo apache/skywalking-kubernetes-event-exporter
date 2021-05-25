@@ -101,7 +101,7 @@ func (exporter *Console) Export(ctx context.Context, events chan *k8score.Event)
 				Type:      t,
 				Message:   kEvent.Message,
 				StartTime: kEvent.FirstTimestamp.UnixNano() / 1000000,
-				EndTime:   kEvent.LastTimestamp.Unix() / 1000000,
+				EndTime:   kEvent.LastTimestamp.UnixNano() / 1000000,
 			}
 			if exporter.config.Template != nil {
 				go func() {
