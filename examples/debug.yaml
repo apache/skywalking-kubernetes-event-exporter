@@ -25,7 +25,7 @@ filters:
     kind: ""       # filter events of the specified kind, regular expression like "Pod|Service" is supported.
     namespace: "default"  # filter events from the specified namespace, regular expression like "default|bookinfo" is supported, empty means all namespaces.
     name: ""       # filter events of the specified involved object name, regular expression like ".*bookinfo.*" is supported.
-    service: ""  # filter events belonging to services whose name is not empty.
+    service: "[^\\s]{1,}"  # filter events belonging to services whose name is not empty.
     exporters:     # events satisfy this filter can be exported into several exporters that are defined in the `exporters` section below.
       - console
 
