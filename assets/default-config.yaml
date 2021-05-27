@@ -17,7 +17,7 @@
 #
 
 filters:
-  - reason: "Started|Killing"     # filter events of the specified reason, regular expression like "Killing|Killed" is supported.
+  - reason: ""     # filter events of the specified reason, regular expression like "Killing|Killed" is supported.
     message: ""    # filter events of the specified message, regular expression like "Pulling container.*" is supported.
     minCount: 1    # filter events whose count is >= the specified value.
     type: ""       # filter events of the specified type, regular expression like "Normal|Error" is supported.
