@@ -29,9 +29,9 @@ exporters:
         service: "{{ .Service.Name }}"
         serviceInstance: "{{ .Pod.Name }}"
         endpoint: ""
-      message: "{{ .Event.Message }}"
+      message: "{{ .Event.Message }}" # this is default, just to demonstrate the context
     address: "skywalking-oap.istio-system:11800"
-    enableTLS: false
+    enableTLS: true
     insecureSkipVerify: true
     trustedCertPath: "/certs/ca.crt"
     clientCertPath: "/certs/tls.crt"

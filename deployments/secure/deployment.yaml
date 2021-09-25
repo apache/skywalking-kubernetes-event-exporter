@@ -1,0 +1,12 @@
+- op: add
+  path: /spec/template/spec/volumes/0
+  value:
+    name: skywalking-tls-volume
+    secret:
+      secretName: skywalking-tls
+- op: add
+  path: /spec/template/spec/containers/0/volumeMounts/0
+  value:
+    name: skywalking-tls-volume
+    mountPath: /certs
+    readOnly: true
