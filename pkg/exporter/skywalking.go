@@ -27,7 +27,6 @@ import (
 	"fmt"
 	"google.golang.org/grpc/credentials"
 	"io/ioutil"
-	"log"
 	"os"
 	"time"
 
@@ -83,16 +82,14 @@ func (exporter *SkyWalking) Init(ctx context.Context) error {
 		if isFileExisted(config.ClientCertPath) && isFileExisted(config.ClientKeyPath) {
 			clientCert, err := tls.LoadX509KeyPair(config.ClientCertPath, config.ClientKeyPath)
 			if err != nil {
-				log.Fatalf("Failed to load client certificate and key. %s.", err)
+				return err
 			}
 			trustedCert, err := ioutil.ReadFile(config.TrustedCertPath)
 			if err != nil {
-				log.Fatalf("Failed to load trusted certificate. %s.", err)
+				return err
 			}
 			certPool := x509.NewCertPool()
-			if !certPool.AppendCertsFromPEM(trustedCert) {
-				log.Fatalf("Failed to append trusted certificate to certificate pool. %s.", err)
-			}
+			certPool.AppendCertsFromPEM(trustedCert)
 
 			tlsConfig := &tls.Config{
 				Certificates: []tls.Certificate{clientCert},
