@@ -15,24 +15,16 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-#
 
-filters:
-  - namespace: istio-system
-    exporters:
-      - skywalking
-
-exporters:
-  skywalking:
-    template:
-      source:
-        service: "{{ .Service.Name }}"
-        serviceInstance: "{{ .Pod.Name }}"
-        endpoint: ""
-      message: "{{ .Event.Message }}"
-    address: "skywalking-oap.istio-system:11800"
-    enableTLS: false
-    insecureSkipVerify: true
-    trustedCertPath: "/certs/ca.crt"
-    clientCertPath: "/certs/tls.crt"
-    clientKeyPath: "/certs/tls.key"
+- op: add
+  path: /spec/template/spec/volumes/0
+  value:
+    name: skywalking-tls-volume
+    secret:
+      secretName: skywalking-tls
+- op: add
+  path: /spec/template/spec/containers/0/volumeMounts/0
+  value:
+    name: skywalking-tls-volume
+    mountPath: /certs
+    readOnly: true

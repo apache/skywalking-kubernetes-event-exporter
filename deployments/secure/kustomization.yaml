@@ -17,22 +17,38 @@
 # under the License.
 #
 
-filters:
-  - namespace: istio-system
-    exporters:
-      - skywalking
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../base
 
-exporters:
-  skywalking:
-    template:
-      source:
-        service: "{{ .Service.Name }}"
-        serviceInstance: "{{ .Pod.Name }}"
-        endpoint: ""
-      message: "{{ .Event.Message }}"
-    address: "skywalking-oap.istio-system:11800"
-    enableTLS: false
-    insecureSkipVerify: true
-    trustedCertPath: "/certs/ca.crt"
-    clientCertPath: "/certs/tls.crt"
-    clientKeyPath: "/certs/tls.key"
+namespace: monitoring
+
+configMapGenerator:
+- files:
+  - config.yaml=config/config.yaml
+  name: skywalking-event-exporter-cm
+
+generatorOptions:
+  disableNameSuffixHash: true
+images:
+- name: skywalking-event-exporter
+  newName: kezhenxu94/skywalking-kubernetes-event-exporter
+  newTag: 58c1342
+
+secretGenerator:
+- files:
+  - ca.crt=./certs/root.crt
+  - tls.crt=./certs/skywalking.crt
+  - tls.key=./certs/skywalking.key
+  name: skywalking-tls
+  options:
+    disableNameSuffixHash: true
+  type: kubernetes.io/tls
+
+patches:
+  - path: ./deployment.yaml
+    target:
+      group: apps
+      version: v1
+      kind: Deployment

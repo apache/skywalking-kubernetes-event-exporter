@@ -21,9 +21,15 @@ package exporter
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"time"
+
+	"google.golang.org/grpc/credentials"
 
 	"github.com/sirupsen/logrus"
 
@@ -43,8 +49,13 @@ type SkyWalking struct {
 }
 
 type SkyWalkingConfig struct {
-	Address  string         `mapstructure:"address"`
-	Template *EventTemplate `mapstructure:"template"`
+	Address            string         `mapstructure:"address"`
+	Template           *EventTemplate `mapstructure:"template"`
+	EnableTLS          bool           `mapstructure:"enableTLS"`
+	ClientCertPath     string         `mapstructure:"clientCertPath"`
+	ClientKeyPath      string         `mapstructure:"clientKeyPath"`
+	TrustedCertPath    string         `mapstructure:"trustedCertPath"`
+	InsecureSkipVerify bool           `mapstructure:"insecureSkipVerify"`
 }
 
 func init() {
@@ -67,7 +78,37 @@ func (exporter *SkyWalking) Init(ctx context.Context) error {
 		return err
 	}
 
-	conn, err := grpc.Dial(config.Address, grpc.WithInsecure())
+	var dialOption grpc.DialOption
+	if config.EnableTLS {
+		if isFileExisted(config.ClientCertPath) && isFileExisted(config.ClientKeyPath) {
+			clientCert, err := tls.LoadX509KeyPair(config.ClientCertPath, config.ClientKeyPath)
+			if err != nil {
+				return err
+			}
+			trustedCert, err := ioutil.ReadFile(config.TrustedCertPath)
+			if err != nil {
+				return err
+			}
+			certPool := x509.NewCertPool()
+			certPool.AppendCertsFromPEM(trustedCert)
+
+			tlsConfig := &tls.Config{
+				Certificates: []tls.Certificate{clientCert},
+				RootCAs:      certPool,
+				MinVersion:   tls.VersionTLS13,
+				MaxVersion:   tls.VersionTLS13,
+			}
+			tlsConfig.InsecureSkipVerify = config.InsecureSkipVerify
+			dialOption = grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))
+		} else {
+			cred, _ := credentials.NewClientTLSFromFile(config.TrustedCertPath, "")
+			dialOption = grpc.WithTransportCredentials(cred)
+		}
+	} else {
+		dialOption = grpc.WithInsecure()
+	}
+
+	conn, err := grpc.Dial(config.Address, dialOption)
 	if err != nil {
 		return err
 	}
@@ -84,6 +125,16 @@ func (exporter *SkyWalking) Init(ctx context.Context) error {
 	}()
 
 	return nil
+}
+
+// checkTLSFile checks the TLS files.
+func isFileExisted(path string) bool {
+	file, err := os.Open(path)
+	if err != nil {
+		return false
+	}
+	_, err = file.Stat()
+	return err == nil
 }
 
 func (exporter *SkyWalking) Name() string {
@@ -156,7 +207,7 @@ func (exporter *SkyWalking) Export(ctx context.Context, events chan *k8score.Eve
 	}
 }
 
-func (exporter SkyWalking) export(stream sw.EventService_CollectClient, swEvent *sw.Event) {
+func (exporter *SkyWalking) export(stream sw.EventService_CollectClient, swEvent *sw.Event) {
 	if err := stream.Send(swEvent); err != nil {
 		logger.Log.Errorf("failed to send event to %+v. %+v", exporter.Name(), err)
 	}

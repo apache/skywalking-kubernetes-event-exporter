@@ -35,3 +35,10 @@ images:
 - name: skywalking-event-exporter
   newName: kezhenxu94/skywalking-kubernetes-event-exporter
   newTag: 58c1342
+
+patches:
+  - path: ./deployment.yaml
+    target:
+      group: apps
+      version: v1
+      kind: Deployment
