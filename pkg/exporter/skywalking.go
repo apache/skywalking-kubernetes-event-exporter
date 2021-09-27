@@ -133,10 +133,7 @@ func isFileExisted(path string) bool {
 		return false
 	}
 	_, err = file.Stat()
-	if err != nil {
-		return false
-	}
-	return true
+	return err == nil
 }
 
 func (exporter *SkyWalking) Name() string {
