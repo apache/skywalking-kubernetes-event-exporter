@@ -206,7 +206,7 @@ func (exporter *SkyWalking) Export(ctx context.Context, events chan *k8score.Eve
 	}
 }
 
-func (exporter SkyWalking) export(stream sw.EventService_CollectClient, swEvent *sw.Event) {
+func (exporter *SkyWalking) export(stream sw.EventService_CollectClient, swEvent *sw.Event) {
 	if err := stream.Send(swEvent); err != nil {
 		logger.Log.Errorf("failed to send event to %+v. %+v", exporter.Name(), err)
 	}
