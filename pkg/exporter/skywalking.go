@@ -25,10 +25,11 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
-	"google.golang.org/grpc/credentials"
 	"io/ioutil"
 	"os"
 	"time"
+
+	"google.golang.org/grpc/credentials"
 
 	"github.com/sirupsen/logrus"
 
