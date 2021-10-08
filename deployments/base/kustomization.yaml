@@ -22,5 +22,4 @@ kind: Kustomization
 resources:
   - cluster-role-binding.yaml
   - deployment.yaml
-  - namespace.yaml
   - service-account.yaml

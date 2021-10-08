@@ -22,7 +22,7 @@ kind: Kustomization
 resources:
   - ../base
 
-namespace: monitoring
+namespace: default
 
 configMapGenerator:
   - files:
