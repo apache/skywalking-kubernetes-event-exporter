@@ -25,7 +25,6 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"time"
 
@@ -85,7 +84,7 @@ func (exporter *SkyWalking) Init(ctx context.Context) error {
 			if err != nil {
 				return err
 			}
-			trustedCert, err := ioutil.ReadFile(config.TrustedCertPath)
+			trustedCert, err := os.ReadFile(config.TrustedCertPath)
 			if err != nil {
 				return err
 			}
