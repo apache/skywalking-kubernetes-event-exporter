@@ -20,7 +20,7 @@
 package main
 
 import (
-	"io/ioutil"
+	"os"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -49,7 +49,7 @@ var rootCmd = &cobra.Command{
 
 		content := assets.DefaultConfig
 		if configFile != "" {
-			c, err := ioutil.ReadFile(configFile)
+			c, err := os.ReadFile(configFile)
 			if err != nil {
 				return err
 			}
