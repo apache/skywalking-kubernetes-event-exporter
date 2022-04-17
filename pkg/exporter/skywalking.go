@@ -28,18 +28,19 @@ import (
 	"os"
 	"time"
 
-	"google.golang.org/grpc/credentials"
-
 	"github.com/sirupsen/logrus"
-
-	sw "skywalking.apache.org/repo/goapi/collect/event/v3"
-
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	k8score "k8s.io/api/core/v1"
+	sw "skywalking.apache.org/repo/goapi/collect/event/v3"
 
 	"github.com/apache/skywalking-kubernetes-event-exporter/configs"
 	"github.com/apache/skywalking-kubernetes-event-exporter/internal/pkg/logger"
 )
+
+// k8sLayerName is the name of the layer that represents the k8s event,
+// which is defined at https://github.com/apache/skywalking/blob/master/oap-server/server-core/src/main/java/org/apache/skywalking/oap/server/core/analysis/Layer.java
+const k8sLayerName = "K8S"
 
 // SkyWalking Exporter exports the events into Apache SkyWalking OAP server.
 type SkyWalking struct {
@@ -184,6 +185,7 @@ func (exporter *SkyWalking) Export(ctx context.Context, events chan *k8score.Eve
 				Message:   kEvent.Message,
 				StartTime: kEvent.FirstTimestamp.UnixNano() / 1000000,
 				EndTime:   kEvent.LastTimestamp.UnixNano() / 1000000,
+				Layer:     k8sLayerName,
 			}
 			if exporter.config.Template != nil {
 				go func() {
