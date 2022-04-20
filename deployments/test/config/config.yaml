@@ -17,36 +17,22 @@
 # under the License.
 #
 
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: skywalking-event-exporter
-spec:
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        app: skywalking-event-exporter
-        version: v1
-    spec:
-      serviceAccountName: skywalking-event-exporter
-      containers:
-        - name: skywalking-event-exporter
-          image: skywalking-event-exporter
-          imagePullPolicy: IfNotPresent
-          args:
-            - start
-            - -v=debug
-            - -c=/data/config.yaml
-          volumeMounts:
-            - mountPath: /data
-              name: config
-      volumes:
-        - name: config
-          configMap:
-            name: skywalking-event-exporter-cm
-  selector:
-    matchLabels:
-      app: skywalking-event-exporter
-      version: v1
+filters:
+  - namespace: test
+    exporters:
+      - skywalking
+
+exporters:
+  skywalking:
+    template:
+      source:
+        service: "{{ .Service.Name }}"
+        serviceInstance: "{{ .Pod.Name }}"
+        endpoint: ""
+      message: "{{ .Event.Message }}"
+    address: "skywalking-oap.skywalking:11800"
+    enableTLS: false
+    insecureSkipVerify: true
+    trustedCertPath: "/certs/ca.crt"
+    clientCertPath: "/certs/tls.crt"
+    clientKeyPath: "/certs/tls.key"
