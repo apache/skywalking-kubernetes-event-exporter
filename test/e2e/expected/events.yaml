@@ -26,17 +26,5 @@ events:
     parameters: []
     starttime: {{ gt .starttime 0 }}
     endtime: {{ gt .endtime 0 }}
-  - uuid: {{ notEmpty .uuid }}
-    source:
-      service: ""
-      serviceinstance: ""
-      endpoint: ""
-    name: SuccessfulCreate
-    type: Normal
-    message: {{ regexp .message "^Created pod:.*"}}
-    parameters: []
-    starttime: {{ gt .starttime 0 }}
-    endtime: {{ gt .endtime 0 }}
   {{- end }}
-total: {{ ge .total 2 }}
-
+total: {{ ge .total 1 }}
