@@ -20,9 +20,9 @@ events:
       service: ""
       serviceinstance: ""
       endpoint: ""
-    name: Started
+    name: ScalingReplicaSet
     type: Normal
-    message: Started container skywalking-event-exporter
+    message: {{ regexp .message "^Scaled up replica set.*"}}
     parameters: []
     starttime: {{ gt .starttime 0 }}
     endtime: {{ gt .endtime 0 }}
@@ -31,9 +31,9 @@ events:
       service: ""
       serviceinstance: ""
       endpoint: ""
-    name: Created
+    name: SuccessfulCreate
     type: Normal
-    message: Created container skywalking-event-exporter
+    message: {{ regexp .message "^Created pod:.*"}}
     parameters: []
     starttime: {{ gt .starttime 0 }}
     endtime: {{ gt .endtime 0 }}
