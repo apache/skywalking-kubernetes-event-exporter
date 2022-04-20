@@ -23,8 +23,6 @@ TMP_DIR=/tmp/sw-event-exporter-e2e
 BIN_DIR=$TMP_DIR/bin
 mkdir -p $TMP_DIR $BIN_DIR && cd $TMP_DIR
 
-export PATH=$BIN_DIR:$PATH
-
 KUBECTL_VERSION=${KUBECTL_VERSION:-'v1.19.1'}
 SWCTL_VERSION=${SWCTL_VERSION:-'0.10.0'}
 HELM_VERSION=${HELM_VERSION:-'helm-v3.0.0'}

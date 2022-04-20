@@ -25,6 +25,8 @@ setup:
         resource: service/skywalking-oap
         port: 12800
   steps:
+    - name: Set PATH
+      command: export PATH=/tmp/sw-event-exporter-e2e/bin:$PATH
     - name: Install tools
       command: bash scripts/prepare-e2e.sh
     - name: Deploy SkyWalking OAP and UI
@@ -54,6 +56,5 @@ verify:
     count: 10
     interval: 5s
   cases:
-#    - query: /Users/hoshea/swctl --display yaml --base-url=http://localhost:12800/graphql event ls
     - query: swctl --display yaml --base-url=http://${service_skywalking_oap_host}:${service_skywalking_oap_12800}/graphql event ls
       expected: expected/events.yaml
