@@ -18,35 +18,7 @@
 #
 
 ---
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: Namespace
 metadata:
-  name: skywalking-event-exporter
-spec:
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        app: skywalking-event-exporter
-        version: v1
-    spec:
-      serviceAccountName: skywalking-event-exporter
-      containers:
-        - name: skywalking-event-exporter
-          image: skywalking-event-exporter
-          imagePullPolicy: IfNotPresent
-          args:
-            - start
-            - -v=debug
-            - -c=/data/config.yaml
-          volumeMounts:
-            - mountPath: /data
-              name: config
-      volumes:
-        - name: config
-          configMap:
-            name: skywalking-event-exporter-cm
-  selector:
-    matchLabels:
-      app: skywalking-event-exporter
-      version: v1
+  name: e2e-test

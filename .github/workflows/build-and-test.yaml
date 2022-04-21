@@ -21,14 +21,22 @@ name: Check
 on:
   pull_request:
 
+concurrency:
+  group: sw-k8s-event-exporter-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-and-test:
     name: Build and Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+
+      - name: Check for non-document changes
+        uses: getsentry/paths-filter@v2
+        id: changes
         with:
-          submodules: true
+          filters: .github/file-filters.yaml
 
       - uses: actions/setup-go@v2
         with:
@@ -39,14 +47,25 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Test
+      - name: Lint
+        if: steps.changes.outputs.src == 'true'
+        run: make lint
+
+      - name: Unit tests
+        if: steps.changes.outputs.src == 'true'
         run: make test
 
       - name: Build
-        run: make
+        run: make build
 
       - name: Build Docker Image
-        run: make -C build/package/docker
+        run: VERSION=test HUB=apache make -C build/package/docker
+
+      - name: E2E tests
+        if: steps.changes.outputs.src == 'true'
+        uses: apache/skywalking-infra-e2e@main
+        with:
+          e2e-file: $GITHUB_WORKSPACE/test/e2e/e2e.yaml
 
   gateway:
     name: Gateway

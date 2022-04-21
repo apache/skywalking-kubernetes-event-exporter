@@ -18,6 +18,11 @@
 
 include scripts/base.mk
 
+E2E_CLI_VERSION=${E2E_CLI_VERSION:-'2a33478'}
+
+# Whether to skip docker build in E2E tests
+E2E_SKIP_BUILD ?= 0
+
 all: clean lint test build
 
 .PHONY: lint
@@ -88,3 +93,15 @@ release: verify release-src release-bin
 	shasum -a 512 $(RELEASE_SRC).tgz > $(RELEASE_SRC).tgz.sha512
 	gpg --batch --yes --armor --detach-sig $(RELEASE_BIN).tgz
 	shasum -a 512 $(RELEASE_BIN).tgz > $(RELEASE_BIN).tgz.sha512
+
+### Run E2E tests locally.
+.PHONY: e2e
+e2e: check-e2e-cli
+	ifeq ($(E2E_SKIP_BUILD), 0)
+		VERSION=test HUB=apache make -C build/package/docker build
+	endif
+	e2e run -c test/e2e/e2e.yaml
+
+.PHONY: check-e2e-cli
+check-e2e-cli:
+	e2e -h || go install github.com/apache/skywalking-infra-e2e/cmd/e2e@$(E2E_CLI_VERSION)
