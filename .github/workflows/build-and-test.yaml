@@ -20,8 +20,6 @@ name: Check
 
 on:
   pull_request:
-    branches:
-      - main
 
 concurrency:
   group: sw-k8s-event-exporter-${{ github.event.pull_request.number || github.ref }}
