@@ -20,11 +20,22 @@ events:
       service: ""
       serviceinstance: ""
       endpoint: ""
-    name: ScalingReplicaSet
-    type: Normal
-    message: {{ regexp .message "^Scaled up replica set.*"}}
+    name: Failed
+    type: Error
+    message: "Error: ImagePullBackOff"
     parameters: []
     starttime: {{ gt .starttime 0 }}
     endtime: {{ gt .endtime 0 }}
+  - uuid: { { notEmpty .uuid } }
+      source:
+        service: ""
+        serviceinstance: ""
+        endpoint: ""
+      name: Failed
+      type: Error
+      message: "Error: ErrImagePull"
+      parameters: []
+      starttime: { { gt .starttime 0 } }
+      endtime: { { gt .endtime 0 } }
   {{- end }}
-total: {{ ge .total 1 }}
+total: {{ ge .total 2 }}

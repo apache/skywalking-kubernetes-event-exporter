@@ -49,6 +49,12 @@ setup:
         - namespace: e2e-test
           resource: pod
           for: condition=Ready
+    - name: Trigger k8s events
+      command: kubectl -n e2e-test run test --image=apache/skywalking:not-exist
+      wait:
+        - namespace: e2e-test
+          resource: pod
+          for: condition=PodScheduled
   timeout: 10m
 
 verify:
