@@ -59,8 +59,8 @@ setup:
 
 verify:
   retry:
-    count: 10
-    interval: 5s
+    count: 20
+    interval: 10s
   cases:
-    - query: swctl --display yaml --base-url=http://${service_skywalking_oap_host}:${service_skywalking_oap_12800}/graphql event ls
+    - query: swctl --display yaml --base-url=http://${service_skywalking_oap_host}:${service_skywalking_oap_12800}/graphql event ls --type Error
       expected: expected/events.yaml
