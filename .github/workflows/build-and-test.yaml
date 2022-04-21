@@ -36,7 +36,7 @@ jobs:
         uses: getsentry/paths-filter@v2
         id: changes
         with:
-          filters: .github/file-filters.yml
+          filters: .github/file-filters.yaml
 
       - uses: actions/setup-go@v2
         with:
