@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -15,24 +14,15 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-#
 
-filters:
-  - namespace: ^e2e-test$
-    exporters:
-      - skywalking
-
-exporters:
-  skywalking:
-    template:
-      source:
-        service: "{{ .Service.Name }}"
-        serviceInstance: "{{ .Pod.Name }}"
-        endpoint: ""
-      message: "{{ .Event.Message }}"
-    address: "skywalking-oap.skywalking:11800"
-    enableTLS: false
-    insecureSkipVerify: true
-    trustedCertPath: "/certs/ca.crt"
-    clientCertPath: "/certs/tls.crt"
-    clientKeyPath: "/certs/tls.key"
+src:
+  - '**/*.go'
+  - 'go.mod'
+  - '.golangci.yml'
+  - '.github/*.yml'
+  - '.github/*.yaml'
+  - 'assets/*.yaml'
+  - 'assets/*.yml'
+  - 'deployments/*.yaml'
+  - 'deployments/*.yml'
+  - 'scripts/*.sh'

@@ -26,16 +26,16 @@ events:
     parameters: []
     starttime: {{ gt .starttime 0 }}
     endtime: {{ gt .endtime 0 }}
-  - uuid: { { notEmpty .uuid } }
-      source:
-        service: ""
-        serviceinstance: ""
-        endpoint: ""
-      name: Failed
-      type: Error
-      message: "Error: ErrImagePull"
-      parameters: []
-      starttime: { { gt .starttime 0 } }
-      endtime: { { gt .endtime 0 } }
+  - uuid: {{ notEmpty .uuid }}
+    source:
+      service: ""
+      serviceinstance: ""
+      endpoint: ""
+    name: Failed
+    type: Error
+    message: "Error: ErrImagePull"
+    parameters: []
+    starttime: {{ gt .starttime 0 }}
+    endtime: {{ gt .endtime 0 }}
   {{- end }}
 total: {{ ge .total 2 }}

@@ -17,13 +17,14 @@
 #
 
 filters:
+  # Note: for the following filters that support regular expression, please use "^<string>$" to exact match.
   - reason: ""     # filter events of the specified reason, regular expression like "Killing|Killed" is supported.
     message: ""    # filter events of the specified message, regular expression like "Pulling container.*" is supported.
     minCount: 1    # filter events whose count is >= the specified value.
     type: ""       # filter events of the specified type, regular expression like "Normal|Error" is supported.
     action: ""     # filter events of the specified action, regular expression is supported.
     kind: "Pod|Service"       # filter events of the specified kind, regular expression like "Pod|Service" is supported.
-    namespace: "default"  # filter events from the specified namespace, regular expression like "default|bookinfo" is supported, empty means all namespaces.
+    namespace: "^default$"  # filter events from the specified namespace, regular expression like "default|bookinfo" is supported, empty means all namespaces.
     name: ""       # filter events of the specified involved object name, regular expression like ".*bookinfo.*" is supported.
     service: "[^\\s]{1,}"  # filter events belonging to services whose name is not empty.
     exporters:     # events satisfy this filter can be exported into several exporters that are defined in the `exporters` section below.
