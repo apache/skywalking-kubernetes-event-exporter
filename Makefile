@@ -23,6 +23,8 @@ E2E_CLI_VERSION=${E2E_CLI_VERSION:-'2a33478'}
 # Whether to skip docker build in E2E tests
 E2E_SKIP_BUILD ?= 0
 
+LICENSE_EYE = license-eye
+
 all: clean lint test build
 
 .PHONY: lint
@@ -105,3 +107,10 @@ e2e: check-e2e-cli
 .PHONY: check-e2e-cli
 check-e2e-cli:
 	e2e -h || go install github.com/apache/skywalking-infra-e2e/cmd/e2e@$(E2E_CLI_VERSION)
+
+$(LICENSE_EYE):
+	@$(LICENSE_EYE) --version > /dev/null 2>&1 || go install github.com/apache/skywalking-eyes/cmd/license-eye@latest
+
+.PHONY: license
+license: clean $(LICENSE_EYE)
+	@$(LICENSE_EYE) header check
