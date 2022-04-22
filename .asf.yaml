@@ -22,6 +22,12 @@ github:
   labels:
     - skywalking
     - kubernetes
+    - event
+    - apm
+  enabled_merge_buttons:
+    squash:  true
+    merge:   false
+    rebase:  false
   protected_branches:
     main:
       required_status_checks:
