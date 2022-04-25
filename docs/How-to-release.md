@@ -194,13 +194,14 @@ Vote result should follow these:
     svn mv https://dist.apache.org/repos/dist/dev/skywalking/kubernetes-event-exporter/$VERSION https://dist.apache.org/repos/dist/release/skywalking/kubernetes-event-exporter -m "Release SkyWalking Kubernetes Event Exporter $VERSION"
     ```
 
-2. Push Docker images.
+2. Push Docker images. In order to publish the Docker images, you have to [enable BuildKit in the Docker daemon](https://docs.docker.com/develop/develop-images/build_enhancements/).
 
     ```shell
-    VERSION=<the version to release> make docker.push
+    docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+    VERSION=<the version to release> make -C build/package/docker release
     ```
 
-3. Refer to the previous [PR](https://github.com/apache/skywalking-website/pull/212), update the event and download
+3. Refer to the previous [PR](https://github.com/apache/skywalking-website/pull/446), update the event and download
    links on the website.
 
 4. Update [Github release page](https://github.com/apache/skywalking-kubernetes-event-exporter/releases), follow the previous convention.
@@ -213,7 +214,7 @@ Vote result should follow these:
 
     Content:
 
-    Hi the SkyWalking Community
+    Hi the SkyWalking Community,
 
     On behalf of the SkyWalking Team, I’m glad to announce that SkyWalking Kubernetes Event Exporter $VERSION is now released.
 
@@ -221,11 +222,11 @@ Vote result should follow these:
 
     SkyWalking: APM (application performance monitor) tool for distributed systems, especially designed for microservices, cloud native and container-based (Docker, Kubernetes, Mesos) architectures.
 
-    Download Links: http://skywalking.apache.org/downloads/
+    Download Links: https://skywalking.apache.org/downloads/
 
-    Release Notes : https://github.com/apache/skywalking-kubernetes-event-exporter/blob/$VERSION/CHANGES.md
+    Release Notes: https://github.com/apache/skywalking-kubernetes-event-exporter/blob/$VERSION/CHANGES.md
 
-    Website: http://skywalking.apache.org/
+    Website: https://skywalking.apache.org/
 
     SkyWalking Kubernetes Event Exporter Resources:
     - Issue: https://github.com/apache/skywalking/issues
