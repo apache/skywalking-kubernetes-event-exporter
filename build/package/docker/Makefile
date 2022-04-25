@@ -21,9 +21,18 @@ include ../../../scripts/base.mk
 all: build
 
 .PHONY: build
-build:
+build: PUSH_OR_LOAD = --load
+build: PLATFORMS =
+
+.PHONY: release
+release: PUSH_OR_LOAD = --push
+release: PLATFORMS = --platform linux/386,linux/amd64,linux/arm64
+
+build release:
+	docker buildx create --use --driver docker-container --name skywalking_k8s_event_exporter > /dev/null 2>&1 || true
 	cd ../../.. ; \
-	docker build --build-arg VERSION=$(VERSION) . -f build/package/docker/Dockerfile -t $(HUB)/$(APP):$(VERSION)
+	docker buildx build $(PUSH_OR_LOAD) $(PLATFORMS) --build-arg VERSION=$(VERSION) . -f build/package/docker/Dockerfile -t $(HUB)/$(APP):$(VERSION) -t $(HUB)/$(APP):latest
+	docker buildx rm skywalking_k8s_event_exporter
 
 .PHONY: push
 push: build
