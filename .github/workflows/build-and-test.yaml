@@ -38,12 +38,12 @@ jobs:
         with:
           filters: .github/file-filters.yaml
 
-      - uses: actions/setup-go@v7
-        with:
-          go-version: 1.25
-
       - name: Check License
         uses: apache/skywalking-eyes/header@a196742f472feaffafea537ce5a2a4c3c53a8de4 # v0.9.0
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version: 1.26
 
       - name: Lint
         if: steps.changes.outputs.src == 'true'

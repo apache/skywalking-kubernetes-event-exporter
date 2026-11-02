@@ -24,6 +24,7 @@ header:
   paths-ignore:
     - 'dist'
     - 'licenses'
+    - 'build/package/LICENSE.tpl'
     - '**/*.md'
     - 'LICENSE'
     - 'NOTICE'

@@ -19,7 +19,7 @@
 # In order to build the Docker image, go to the root directory of this repo, and run
 # make docker
 
-FROM golang:1.25-alpine AS build
+FROM golang:1.26-alpine AS build
 
 WORKDIR /skywalking
 
