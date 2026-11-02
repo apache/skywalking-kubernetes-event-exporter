@@ -25,11 +25,13 @@ E2E_SKIP_BUILD ?= 0
 
 LICENSE_EYE = license-eye
 
+GOLANGCI_LINT_VERSION ?= v2.15.0
+
 all: clean lint test build
 
 .PHONY: lint
 lint:
-	$(GO_LINT) version || curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GO_PATH)/bin
+	$(GO_LINT) version 2>/dev/null | grep -q "version $(GOLANGCI_LINT_VERSION:v%=%) " || curl -sSfL https://golangci-lint.run/install.sh | sh -s -- -b $(GO_PATH)/bin $(GOLANGCI_LINT_VERSION)
 	$(GO_LINT) run -v --timeout 5m ./...
 
 .PHONY: fix-lint

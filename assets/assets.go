@@ -25,5 +25,6 @@ import (
 )
 
 // DefaultConfig is the default configurations of the exporter.
+//
 //go:embed default-config.yaml
 var DefaultConfig []byte
