@@ -18,7 +18,7 @@
 
 include scripts/base.mk
 
-E2E_CLI_VERSION=${E2E_CLI_VERSION:-'2a33478'}
+E2E_CLI_VERSION ?= 56ac8befeb5f910f2dc9339e65d07cd18953f90e
 
 # Whether to skip docker build in E2E tests
 E2E_SKIP_BUILD ?= 0
