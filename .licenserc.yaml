@@ -33,3 +33,7 @@ header:
     - 'api/**'
 
   comment: on-failure
+
+dependency:
+  files:
+    - go.mod

@@ -202,51 +202,125 @@
 
 
 =======================================================================
-Apache SkyWalking Eyes Subcomponents:
+Apache SkyWalking Kubernetes Event Exporter Subcomponents:
 
-The Apache SkyWalking Eyes project contains subcomponents with separate copyright
-notices and license terms. Your use of the source code for the these
-subcomponents is subject to the terms and conditions of the following
+The Apache SkyWalking Kubernetes Event Exporter project contains subcomponents
+with separate copyright notices and license terms. Your use of the source code
+for these subcomponents is subject to the terms and conditions of the following
 licenses.
 
+========================================================================
+Apache-2.0 licenses
+========================================================================
+
+The following components are provided under the Apache-2.0 License. See project link for details.
+The text of each license is also included at licenses/license-[project].txt.
+
+    cloud.google.com/go/compute/metadata v0.9.0 Apache-2.0
+    github.com/Azure/go-autorest v14.2.0+incompatible Apache-2.0
+    github.com/Azure/go-autorest/autorest v0.11.1 Apache-2.0
+    github.com/Azure/go-autorest/autorest/adal v0.9.5 Apache-2.0
+    github.com/Azure/go-autorest/autorest/date v0.3.0 Apache-2.0
+    github.com/Azure/go-autorest/logger v0.2.0 Apache-2.0
+    github.com/Azure/go-autorest/tracing v0.6.0 Apache-2.0
+    github.com/go-logr/logr v1.4.3 Apache-2.0
+    github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 Apache-2.0
+    github.com/google/gofuzz v1.1.0 Apache-2.0
+    github.com/googleapis/gnostic v0.4.1 Apache-2.0
+    github.com/inconshreveable/mousetrap v1.0.0 Apache-2.0
+    github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd Apache-2.0
+    github.com/modern-go/reflect2 v1.0.2 Apache-2.0
+    github.com/spf13/cobra v1.1.3 Apache-2.0
+    google.golang.org/genproto/googleapis/rpc v0.0.0-20260526163538-3dc84a4a5aaa Apache-2.0
+    google.golang.org/grpc v1.83.2 Apache-2.0
+    gopkg.in/yaml.v2 v2.4.0 Apache-2.0
+    k8s.io/api v0.20.5 Apache-2.0
+    k8s.io/apimachinery v0.20.5 Apache-2.0
+    k8s.io/client-go v0.20.5 Apache-2.0
+    k8s.io/klog/v2 v2.140.0 Apache-2.0
+    k8s.io/utils v0.0.0-20201110183641-67b214c5f920 Apache-2.0
+    sigs.k8s.io/structured-merge-diff/v4 v4.0.2 Apache-2.0
+    skywalking.apache.org/repo/goapi v0.0.0-20220412071816-33e4ea2a99b4 Apache-2.0
 
 ========================================================================
-Apache 2.0 licenses
+BSD-2-Clause licenses
 ========================================================================
 
-The following components are provided under the Apache License. See project link for details.
-The text of each license is the standard Apache 2.0 license.
+The following components are provided under the BSD-2-Clause License. See project link for details.
+The text of each license is also included at licenses/license-[project].txt.
 
-    cobra v1.1.3: https://github.com/spf13/cobra Apache 2.0
-	grpc-go v1.36.1: https://github.com/grpc/grpc-go Apache 2.0
-	k8s.io/api v0.20.5: https://github.com/kubernetes/api Apache 2.0
-	k8s.io/client-go v0.20.5: https://github.com/kubernetes/client-go Apache 2.0
+    gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c BSD-2-Clause
+
+========================================================================
+BSD-3-Clause licenses
+========================================================================
+
+The following components are provided under the BSD-3-Clause License. See project link for details.
+The text of each license is also included at licenses/license-[project].txt.
+
+    github.com/gogo/protobuf v1.3.2 BSD-3-Clause
+    github.com/golang/protobuf v1.5.4 BSD-3-Clause
+    github.com/google/go-cmp v0.7.0 BSD-3-Clause
+    github.com/imdario/mergo v0.3.5 BSD-3-Clause
+    github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 BSD-3-Clause
+    github.com/rogpeppe/go-internal v1.14.1 BSD-3-Clause
+    github.com/spf13/pflag v1.0.5 BSD-3-Clause
+    golang.org/x/crypto v0.55.0 BSD-3-Clause
+    golang.org/x/net v0.58.0 BSD-3-Clause
+    golang.org/x/oauth2 v0.36.0 BSD-3-Clause
+    golang.org/x/sys v0.47.0 BSD-3-Clause
+    golang.org/x/term v0.45.0 BSD-3-Clause
+    golang.org/x/text v0.41.0 BSD-3-Clause
+    golang.org/x/time v0.14.0 BSD-3-Clause
+    google.golang.org/protobuf v1.36.11 BSD-3-Clause
+    gopkg.in/inf.v0 v0.9.1 BSD-3-Clause
+
+========================================================================
+ISC licenses
+========================================================================
+
+The following components are provided under the ISC License. See project link for details.
+The text of each license is also included at licenses/license-[project].txt.
+
+    github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc ISC
 
 ========================================================================
 MIT licenses
 ========================================================================
 
-The following components are provided under the MIT license. See project link for details.
-The text of each license is also included at licenses/LICENSE-[project].txt.
+The following components are provided under the MIT License. See project link for details.
+The text of each license is also included at licenses/license-[project].txt.
 
-    logrus 1.8.1: https://github.com/sirupsen/logrus MIT
-    yaml v3: https://github.com/go-yaml/yaml/blob/v3 MIT
-
-========================================================================
-BSD licenses
-========================================================================
-
-The following components are provided under a BSD license. See project link for details.
-The text of each license is also included at licenses/LICENSE-[project].txt.
-
-    go-github v33: https://github.com/google/go-github BSD-3-Clause
-    oauth2 v0.0.0: https://github.com/golang/oauth2 BSD-3-Clause
+    github.com/form3tech-oss/jwt-go v3.2.2+incompatible MIT
+    github.com/json-iterator/go v1.1.12 MIT
+    github.com/kr/pretty v0.3.1 MIT
+    github.com/sirupsen/logrus v1.9.4 MIT
+    github.com/stretchr/testify v1.11.1 MIT
 
 ========================================================================
-MPL licenses
+MIT and Apache-2.0 licenses
 ========================================================================
 
-The following components are provided under MPL license. See project link for details.
-The text of each license is also included at licenses/LICENSE-[project].txt.
+The following components are provided under the MIT and Apache-2.0 License. See project link for details.
+The text of each license is also included at licenses/license-[project].txt.
 
-    golang-lru v0.5.4: github.com/hashicorp/golang-lru MPL-2.0
+    gopkg.in/yaml.v3 v3.0.1 MIT and Apache-2.0
+
+========================================================================
+MIT and BSD-3-Clause licenses
+========================================================================
+
+The following components are provided under the MIT and BSD-3-Clause License. See project link for details.
+The text of each license is also included at licenses/license-[project].txt.
+
+    sigs.k8s.io/yaml v1.2.0 MIT and BSD-3-Clause
+
+========================================================================
+MPL-2.0 licenses
+========================================================================
+
+The following components are provided under the MPL-2.0 License. See project link for details.
+The text of each license is also included at licenses/license-[project].txt.
+
+    github.com/hashicorp/golang-lru v0.5.4 MPL-2.0
+

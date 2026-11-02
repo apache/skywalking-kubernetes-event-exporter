@@ -30,20 +30,20 @@ jobs:
     name: Build and Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v7
 
       - name: Check for non-document changes
-        uses: getsentry/paths-filter@v2
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: changes
         with:
           filters: .github/file-filters.yaml
 
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-go@v7
         with:
-          go-version: 1.16
+          go-version: 1.25
 
       - name: Check License
-        uses: apache/skywalking-eyes/header@501a28d2fb4a9b962661987e50cf0219631b32ff
+        uses: apache/skywalking-eyes/header@a196742f472feaffafea537ce5a2a4c3c53a8de4 # v0.9.0
 
       - name: Lint
         if: steps.changes.outputs.src == 'true'
@@ -61,7 +61,7 @@ jobs:
 
       - name: E2E tests
         if: steps.changes.outputs.src == 'true'
-        uses: apache/skywalking-infra-e2e@main
+        uses: apache/skywalking-infra-e2e@56ac8befeb5f910f2dc9339e65d07cd18953f90e
         with:
           e2e-file: $GITHUB_WORKSPACE/test/e2e/e2e.yaml
 

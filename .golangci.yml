@@ -14,90 +14,101 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-run:
-  skip-files:
-    - ".*\\.pb\\.go"
-    - ".*\\.gen\\.go"
-
-linters-settings:
-  govet:
-    check-shadowing: true
-  golint:
-    min-confidence: 0
-  gocyclo:
-    min-complexity: 20
-  maligned:
-    suggest-new: true
-  dupl:
-    threshold: 200
-  goconst:
-    min-len: 2
-    min-occurrences: 2
-  depguard:
-    list-type: blacklist
-    include-go-root: true
-    packages-with-error-messages:
-      fmt: "logging is allowed only by logutils.Log"
-  misspell:
-    locale: US
-  lll:
-    line-length: 150
-  goimports:
-    local-prefixes: github.com/apache/skywalking-kubernetes-event-exporter
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - experimental
-      - opinionated
-      - performance
-      - style
-    disabled-checks:
-      - ifElseChain
-  funlen:
-    lines: 100
-    statements: 50
-  whitespace:
-    multi-if: false
-    multi-func: false
-
+version: "2"
 linters:
   enable:
     - bodyclose
-    - deadcode
-    - depguard
+    # depguard is not enabled: the v1 config denied "fmt" ("logging is allowed
+    # only by logutils.Log"), but fmt is used for errors and formatting
+    # (fmt.Errorf, fmt.Sprintf, fmt.Println in cmd/version.go) and there is no
+    # logutils package. golangci-lint v2's default depguard rule would also
+    # deny every non-standard-library import.
     - dogsled
     - dupl
-    - errcheck
     - funlen
     - goconst
     - gocritic
     - gocyclo
-    - gofmt
-    - goimports
-    - golint
     - gosec
-    - gosimple
-    - govet
-    - ineffassign
-    - interfacer
     - lll
     - misspell
     - nakedret
     - staticcheck
-    - structcheck
-    - stylecheck
-    - typecheck
     - unconvert
     - unparam
-    - unused
-    - varcheck
     - whitespace
-
-service:
-  golangci-lint-version: 1.20.x
-
-issues:
-  exclude-rules:
-    - linters:
-        - lll
-      source: "^// "
+  settings:
+    dupl:
+      threshold: 200
+    funlen:
+      lines: 100
+      statements: 50
+    goconst:
+      min-len: 2
+      min-occurrences: 2
+    gocritic:
+      disabled-checks:
+        - ifElseChain
+      enabled-tags:
+        - diagnostic
+        - experimental
+        - opinionated
+        - performance
+        - style
+    gocyclo:
+      min-complexity: 20
+    govet:
+      enable:
+        - shadow
+    lll:
+      line-length: 150
+    misspell:
+      locale: US
+    whitespace:
+      multi-if: false
+      multi-func: false
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - lll
+        source: '^// '
+      # Table-driven test cases repeat their input strings on purpose.
+      - linters:
+          - goconst
+        path: _test\.go
+      # grpc.WithInsecure and grpc.Dial are deprecated but still supported in
+      # gRPC 1.x. Moving to insecure.NewCredentials() and grpc.NewClient (which
+      # defaults to the dns resolver instead of passthrough) is a behavior
+      # change left for a separate PR.
+      - linters:
+          - staticcheck
+        path: pkg/exporter/skywalking\.go
+        text: 'SA1019: google\.golang\.org/grpc\.(WithInsecure|Dial) is deprecated'
+    paths:
+      - .*\.pb\.go$
+      - .*\.gen\.go$
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/apache/skywalking-kubernetes-event-exporter
+  exclusions:
+    generated: lax
+    paths:
+      - .*\.pb\.go$
+      - .*\.gen\.go$
+      - third_party$
+      - builtin$
+      - examples$

@@ -38,7 +38,7 @@ setup:
           --set oap.image.tag=$OAP_IMAGE_TAG \
           --set ui.image.tag=$UI_IMAGE_TAG \
           --set elasticsearch.enabled=false \
-          --set oap.env.JAVA_OPTS='-Dmode='
+          --set oap.javaOpts='-Dmode='
       wait:
         - namespace: skywalking
           resource: pod
